@@ -81,7 +81,21 @@ npm test        # test/run.mjs — no dependencies, no network
 
 ## Screenshots
 
-> 📷 Placeholder: drop screenshots into this session workspace (`images/`, png/jpg) and I will lay them out in a grid here.
+<div align="center">
+
+![Model panel main view](images/panel-overview.png)
+
+**The table panel** — search box · provider tree · balance / plan / channel credits · per-model thinking toggle and effort slider
+
+</div>
+
+| UI element | What it does |
+| --- | --- |
+| Search box | Filters providers and models live; Enter picks the first match |
+| Provider header | Balance (¥9.75), plan progress (2%), channel credits and model count on one line |
+| Model row | Thinking toggle + effort slider (High etc.) + one-click reset |
+
+> 📷 Drop more screenshots into `images/` and I will extend this grid.
 
 ## License
 

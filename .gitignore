@@ -10,5 +10,3 @@ dist/
 .gitpub-secrets/
 *token*.txt
 *.secrets
-# CI workflow requires token with "workflow" scope; re-add when token updated
-.github/workflows/
