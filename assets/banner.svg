@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="1200" height="300" role="img" aria-label="dsh-model-panel 项目横幅">
+  <defs>
+    <linearGradient id="dsh-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1220"/>
+      <stop offset="55%" stop-color="#0f1f3d"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
+    </linearGradient>
+    <linearGradient id="dsh-whale" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="300" fill="url(#dsh-bg)"/>
+  <circle cx="1080" cy="60" r="120" fill="#1e3a8a" opacity="0.35"/>
+  <circle cx="1140" cy="240" r="70" fill="#38bdf8" opacity="0.12"/>
+  <g transform="translate(70,95)">
+    <path d="M0 55 Q0 0 55 0 L260 0 Q315 0 315 55 Q315 110 260 110 L55 110 Q0 110 0 55 Z" fill="url(#dsh-whale)"/>
+    <path d="M265 55 L350 10 Q360 32 338 55 Q360 78 350 100 Z" fill="url(#dsh-whale)"/>
+    <circle cx="62" cy="45" r="5" fill="#0b1220"/>
+    <path d="M95 0 Q88 -28 70 -38 M95 0 Q95 -30 95 -42 M95 0 Q102 -28 120 -38" stroke="#7dd3fc" stroke-width="5" fill="none" stroke-linecap="round"/>
+  </g>
+  <text x="440" y="128" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="bold" fill="#e2e8f0">dsh-model-panel</text>
+  <text x="440" y="172" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#94a3b8">优雅的对话框插件选择器 · Elegant dialog-based plugin picker</text>
+  <text x="440" y="212" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#38bdf8">DeepSeek Harness 插件 · <tspan fill="#818cf8">dsh-plugin</tspan></text>
+</svg>

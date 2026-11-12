@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Model panel",
+    "description": "Replaces the composer model seat with a searchable provider and model table: remembered group collapse, per-model thinking toggle and effort slider, and each provider's balance, plan usage and third-party channel credits in one right-side info cluster. Never converts between units."
+  }
+}

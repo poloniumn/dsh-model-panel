@@ -1,0 +1,63 @@
+{
+  "name": "dsh-model-panel",
+  "version": "0.2.0",
+  "description": "A table-style model panel for the DeepSeek Harness composer: provider tree in model-directory order with third-party channels last, remembered collapse, model search, per-model thinking toggle and effort slider, plus self-hosted balance, plan and channel-credit rows in each provider header.",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "cordis",
+    "model-picker",
+    "balance",
+    "credits"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "author": "YG",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/poloniumn/dsh-model-panel.git"
+  },
+  "homepage": "https://github.com/poloniumn/dsh-model-panel#readme",
+  "bugs": {
+    "url": "https://github.com/poloniumn/dsh-model-panel/issues"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "lib",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check": "node --check index.js && node --check client.js",
+    "test": "node test/run.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-model-selection",
+        "@deepseek-ai/dsh-api-session-controller"
+      ]
+    }
+  }
+}
