@@ -18,6 +18,24 @@
 
 </div>
 
+## Screenshots
+
+<div align="center">
+
+![Model panel main view](images/panel-overview.png)
+
+**The table panel** — search box · provider tree · balance / plan / channel credits · per-model thinking toggle and effort slider
+
+</div>
+
+| UI element | What it does |
+| --- | --- |
+| Search box | Filters providers and models live; Enter picks the first match |
+| Provider header | Balance (¥9.75), plan progress (2%), channel credits and model count on one line |
+| Model row | Thinking toggle + effort slider (High etc.) + one-click reset |
+
+> 📷 Screenshots live in `images/`, named `<scene>-<view>.png` — one light theme, one dark.
+
 ## Features
 
 - **Provider tree**: drawn in the model directory's own order, with collapse state remembered in localStorage (`dsh-model-panel.collapsed`). When every group declares a numeric rank (`order` / `seq` / `index` / `position` / `rank`) that rank is honoured; a partial rank list is ignored so the list is never half-reshuffled.
@@ -99,24 +117,6 @@ The cookie is written to the local DSH credential store only — never to the pl
 npm run check   # node --check on both halves
 npm test        # test/run.mjs — no dependencies, no network
 ```
-
-## Screenshots
-
-<div align="center">
-
-![Model panel main view](images/panel-overview.png)
-
-**The table panel** — search box · provider tree · balance / plan / channel credits · per-model thinking toggle and effort slider
-
-</div>
-
-| UI element | What it does |
-| --- | --- |
-| Search box | Filters providers and models live; Enter picks the first match |
-| Provider header | Balance (¥9.75), plan progress (2%), channel credits and model count on one line |
-| Model row | Thinking toggle + effort slider (High etc.) + one-click reset |
-
-> 📷 Screenshots live in `images/`, named `<scene>-<view>.png` — one light theme, one dark.
 
 ## License
 
