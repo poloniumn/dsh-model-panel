@@ -22,9 +22,10 @@
 import os from 'node:os'
 import path from 'node:path'
 
-import { crossSite, loopbackBase, loopbackRequest, sendEmpty, sendJson } from './lib/http.js'
+import { crossSite, loopbackBase, loopbackRequest, readJsonBody, sendEmpty, sendJson } from './lib/http.js'
 import { createSchedules } from './lib/schedules.js'
 import { createSecrets } from './lib/secrets.js'
+import { createCookieSetup } from './lib/cookie-setup.js'
 import { createAdapterSet } from './lib/registry.js'
 import { errorState, getJson, num } from './lib/util.js'
 import { fetchThirdParty } from './lib/third-party.js'
@@ -35,6 +36,8 @@ export const name = 'dsh-model-panel'
 export const inject = ['webServer']
 
 const ROUTE = '/dsh-model-panel/state.json'
+const SETTINGS_ROUTE = '/dsh-model-panel/settings.json'
+const SECRET_ROUTE = '/dsh-model-panel/secret.json'
 const CACHE_TTL_MS = 60_000
 
 /**
@@ -57,15 +60,23 @@ function chooseSecretRef(secret, profileRef) {
  */
 function secretRefCandidates(secret, profileRef) {
   if (!secret || secret.type === 'account') return []
-  if (secret.type === 'cookie') return [secret.ref]
-  const refs = []
+  if (secret.type === 'cookie') {
+    const out = [{ ref: secret.ref, auth: 'cookie' }]
+    for (const fallback of secret.fallbacks || []) {
+      const ref = fallback && fallback.ref
+      if (!ref || out.some((item) => item.ref === ref)) continue
+      out.push({ ref, auth: fallback.auth || 'key' })
+    }
+    return out
+  }
+  const out = []
   const push = (ref) => {
-    if (ref && !refs.includes(ref)) refs.push(ref)
+    if (ref && !out.some((item) => item.ref === ref)) out.push({ ref, auth: 'key' })
   }
   push(profileRef)
   push(secret.ref)
   for (const alias of secret.aliases || []) push(alias)
-  return refs
+  return out
 }
 
 export function apply(ctx, config) {
@@ -84,6 +95,9 @@ export function apply(ctx, config) {
   }
   const secrets = createSecrets({ getService: (key) => get(key) })
   const schedules = createSchedules({ cacheDir })
+  // The settings page exists for usage numbers that only a signed-in console
+  // session can read; it never touches a key-based endpoint.
+  const cookieSetup = createCookieSetup({ adapters, secrets })
 
   // Our Free Model 的 EAC router 渠道积分。走宿主连接的进程内 Fetch，不是
   // 裸回环 HTTP（`/api/*` 在宿主网关后面）。拿不到就空数组，卡片照常渲染。
@@ -186,17 +200,19 @@ export function apply(ctx, config) {
       // router's `apiKeyEnv`. Key-backed adapters may follow the rename, but
       // only when it actually resolves.
       const candidates = secretRefCandidates(shaped.secret, meta.keyRef)
-      let ref = candidates[0] || shaped.secret.ref
+      let ref = candidates[0] ? candidates[0].ref : shaped.secret.ref
+      let auth = candidates[0] ? candidates[0].auth : 'key'
       let secret = null
       for (const candidate of candidates) {
         let value = null
         try {
-          value = await secrets.read(candidate)
+          value = await secrets.read(candidate.ref)
         } catch {
           value = null
         }
         if (value) {
-          ref = candidate
+          ref = candidate.ref
+          auth = candidate.auth
           secret = value
           break
         }
@@ -204,7 +220,7 @@ export function apply(ctx, config) {
       if (!secret) return { ...row, status: 'no-key', keyRef: ref }
 
       if (typeof adapter.fetchSecret === 'function') {
-        const result = await adapter.fetchSecret(secret, { account: get('deepseekAccount'), row })
+        const result = await adapter.fetchSecret(secret, { account: get('deepseekAccount'), row, auth })
         return { ...row, ...result }
       }
       const result = await getJson((adapter.urlFor && adapter.urlFor(id)) || adapter.url, secret)
@@ -379,10 +395,57 @@ export function apply(ctx, config) {
     }
   }
 
+  /** Cookie-backed setup entries: what is stored, and what it unlocks. */
+  async function handleSettings(req, res) {
+    try {
+      const code = denied(req)
+      if (code) return sendEmpty(res, code)
+      if (req.method && req.method !== 'GET') return sendEmpty(res, 405)
+      const entries = await cookieSetup.list()
+      return sendJson(res, 200, { ok: true, updatedAt: Date.now(), entries, total: entries.length })
+    } catch (err) {
+      try {
+        return sendJson(res, 500, { ok: false, error: String((err && err.message) || err).slice(0, 200) })
+      } catch {
+        return undefined
+      }
+    }
+  }
+
+  /** Store or drop one console cookie. The value is never echoed back. */
+  async function handleSecret(req, res) {
+    try {
+      const code = denied(req)
+      if (code) return sendEmpty(res, code)
+      if (req.method && req.method !== 'POST') return sendEmpty(res, 405)
+      const body = await readJsonBody(req)
+      if (!body || typeof body !== 'object') return sendJson(res, 400, { ok: false, error: 'invalid body' })
+      const action = body.action === 'clear' ? 'clear' : 'save'
+      const result =
+        action === 'clear'
+          ? await cookieSetup.clear(body.id)
+          : await cookieSetup.save(body.id, body.value)
+      return sendJson(res, result && result.ok ? 200 : 400, result)
+    } catch (err) {
+      try {
+        return sendJson(res, 500, { ok: false, error: String((err && err.message) || err).slice(0, 200) })
+      } catch {
+        return undefined
+      }
+    }
+  }
+
+  const routes = [
+    { path: ROUTE, handler: handleState },
+    { path: SETTINGS_ROUTE, handler: handleSettings },
+    { path: SECRET_ROUTE, handler: handleSecret },
+  ]
   ctx.inject(['webServer'], (inner) => {
-    inner.effect(
-      () => inner.webServer.register({ kind: 'exact', path: ROUTE, handler: handleState }),
-      `route:${ROUTE}`
-    )
+    for (const route of routes) {
+      inner.effect(
+        () => inner.webServer.register({ kind: 'exact', path: route.path, handler: route.handler }),
+        `route:${route.path}`
+      )
+    }
   })
 }

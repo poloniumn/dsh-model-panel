@@ -24,6 +24,8 @@ window.__ModuleLoader__.load({
     const K_OFF = 'dsh-model-panel.off';
     const K_COLLAPSED = 'dsh-model-panel.collapsed';
     const STATE_ENDPOINT = '/dsh-model-panel/state.json';
+    const SETTINGS_ENDPOINT = '/dsh-model-panel/settings.json';
+    const SECRET_ENDPOINT = '/dsh-model-panel/secret.json';
 
     const zh = {
       search: '搜索模型或服务商',
@@ -46,6 +48,29 @@ window.__ModuleLoader__.load({
       ofmQuota: '剩余配额',
       ofmAccounts: '已查询 {n} 个账号',
       ofmFailed: '积分查询失败',
+      setTitle: '余额显示',
+      setSubtitle: '有些用量只存在于已登录的控制台，API 密钥读不到。这里只保存浏览器 Cookie，不发起任何密钥请求。',
+      setNone: '没有需要 Cookie 的服务商。',
+      setStored: '已配置',
+      setMissing: '未配置',
+      setConsole: '打开控制台',
+      setAdd: '配置 Cookie',
+      setUpdate: '更新 Cookie',
+      setClear: '清除',
+      setSave: '保存并测试',
+      setSaving: '测试中…',
+      setCancel: '取消',
+      setSaved: '已保存，Cookie 可用。',
+      setCleared: '已清除。',
+      setFailed: '保存失败',
+      setPlaceholder: '粘贴控制台请求头里的整段 Cookie（name=value; name2=value2）',
+      setFoot: 'Cookie 只写入本机 DSH 凭据库，不写入插件配置、日志或浏览器存储。',
+      setUsed: '已用 {p}',
+      setUntil: '至 {d}',
+      setExpired: 'Cookie 已失效，请重新粘贴。',
+      setErr: '读取失败',
+      setRetry: '重试',
+      setHidden: '未取到用量',
     };
     const en = {
       search: 'Search models or providers',
@@ -68,6 +93,29 @@ window.__ModuleLoader__.load({
       ofmQuota: 'Quota left',
       ofmAccounts: '{n} accounts queried',
       ofmFailed: 'Credit lookup failed',
+      setTitle: 'Balance display',
+      setSubtitle: 'Some usage numbers only exist behind a signed-in console — no API key can read them. This page stores a browser cookie and makes no key-based request.',
+      setNone: 'No provider needs a cookie right now.',
+      setStored: 'Configured',
+      setMissing: 'Not configured',
+      setConsole: 'Open console',
+      setAdd: 'Add cookie',
+      setUpdate: 'Update cookie',
+      setClear: 'Clear',
+      setSave: 'Save and test',
+      setSaving: 'Testing…',
+      setCancel: 'Cancel',
+      setSaved: 'Saved — the cookie works.',
+      setCleared: 'Cleared.',
+      setFailed: 'Save failed',
+      setPlaceholder: 'Paste the console Cookie header (name=value; name2=value2)',
+      setFoot: 'The cookie is written to the local DSH credential store only — never to plugin config, logs or browser storage.',
+      setUsed: '{p} used',
+      setUntil: 'until {d}',
+      setExpired: 'The cookie expired — paste a fresh one.',
+      setErr: 'Read failed',
+      setRetry: 'Retry',
+      setHidden: 'No usage yet',
     };
 
     function tr(t, key, params) {
@@ -1293,9 +1341,270 @@ window.__ModuleLoader__.load({
       }
     }
 
-    function apply(ctx) {
+    // ---------- cookie-backed usage (Settings → Plugins → Balance display) ----------
+
+    /** Tab title without a translator: the host may call label() with no args. */
+    function tabTitle() {
+      let lang = '';
       try {
-        const locale = (typeof ctx.get === 'function' && ctx.get('locale')) || ctx.locale;
+        lang = String(document.documentElement.lang || navigator.language || '');
+      } catch (e) {
+        lang = '';
+      }
+      return /^zh/i.test(lang) ? zh.setTitle : en.setTitle;
+    }
+
+    /** The stored cookies plus the usage each one unlocks. Never mutating. */
+    async function settingsRequest() {
+      const res = await fetch(SETTINGS_ENDPOINT, { cache: 'no-store' });
+      const body = await res.json().catch(() => null);
+      if (!body || typeof body !== 'object') throw new Error('HTTP ' + res.status);
+      if (body.ok === false) throw new Error(String(body.error || 'settings failed'));
+      return Array.isArray(body.entries) ? body.entries : [];
+    }
+
+    async function secretRequest(id, action, value) {
+      const payload = { id: id, action: action };
+      if (value !== undefined) payload.value = value;
+      try {
+        const res = await fetch(SECRET_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const body = await res.json().catch(() => null);
+        return body && typeof body === 'object' ? body : { ok: false, error: 'HTTP ' + res.status };
+      } catch (err) {
+        return { ok: false, error: String((err && err.message) || err) };
+      }
+    }
+
+    function dayText(value) {
+      const ms = Number(value);
+      if (!Number.isFinite(ms) || ms <= 0) return '';
+      try {
+        return new Date(ms).toLocaleDateString();
+      } catch (e) {
+        return '';
+      }
+    }
+
+    /** What a stored cookie bought us: plan name, used bar, period end. */
+    function usageLine(entry, t) {
+      if (!entry.set) return null;
+      if (entry.status === 'error') {
+        const detail = String(entry.detail || '');
+        const expired = /expired|401|403|notlogined|登录/i.test(detail);
+        return h('div', { className: 'dshmp-set-usage err' }, expired ? t('setExpired') : detail || t('setHidden'));
+      }
+      const used = Number.isFinite(entry.usedPct) ? Math.max(0, Math.min(100, entry.usedPct)) : null;
+      const until = dayText(entry.endAt);
+      return h(
+        'div',
+        { className: 'dshmp-set-usage' },
+        entry.plan ? h('span', { className: 'dshmp-set-plan' }, String(entry.plan)) : null,
+        used === null
+          ? null
+          : h(
+              'span',
+              { className: 'dshmp-set-bar', title: tr(t, 'setUsed', { p: pctText(used) }) },
+              h('span', {
+                className: 'dshmp-set-bar-fill' + (used >= 90 ? ' low' : ''),
+                style: { width: used + '%' },
+              })
+            ),
+        used === null ? null : h('span', { className: 'dshmp-set-pct' }, pctText(used)),
+        until ? h('span', { className: 'dshmp-set-until' }, tr(t, 'setUntil', { d: until })) : null,
+        used === null && !entry.plan && !until
+          ? h('span', { className: 'dshmp-set-until' }, t('setHidden'))
+          : null
+      );
+    }
+
+    /**
+     * The Settings page. Scope is deliberately one thing: cookies that unlock
+     * usage no API key can read. Nothing here touches a key endpoint, and the
+     * pasted value never goes back to the browser after it is saved.
+     */
+    function CookieUsageTab(props) {
+      const t = typeof (props && props.t) === 'function' ? props.t : (key) => String(key);
+      const [entries, setEntries] = useState(null);
+      const [error, setError] = useState('');
+      const [editing, setEditing] = useState('');
+      const [draft, setDraft] = useState('');
+      const [busy, setBusy] = useState('');
+      const [note, setNote] = useState(null);
+
+      const load = useCallback(() => {
+        setError('');
+        settingsRequest()
+          .then((list) => setEntries(list))
+          .catch((err) => {
+            setError(String((err && err.message) || err));
+            setEntries([]);
+          });
+      }, []);
+      useEffect(load, [load]);
+
+      function merge(entry) {
+        if (!entry) return;
+        setEntries((prev) => (prev || []).map((item) => (item.ref === entry.ref ? Object.assign({}, item, entry) : item)));
+      }
+
+      async function save(entry) {
+        setBusy(entry.ref);
+        setNote(null);
+        const body = await secretRequest(entry.id, 'save', draft);
+        setBusy('');
+        if (body.ok) {
+          merge(body.entry);
+          setEditing('');
+          setDraft('');
+          const plan = body.entry && body.entry.plan ? ' · ' + body.entry.plan : '';
+          setNote({ ok: true, text: t('setSaved') + plan });
+        } else {
+          setNote({ ok: false, text: body.error || t('setFailed') });
+        }
+      }
+
+      async function clear(entry) {
+        setBusy(entry.ref);
+        setNote(null);
+        const body = await secretRequest(entry.id, 'clear');
+        setBusy('');
+        if (body.ok) {
+          merge(body.entry);
+          setNote({ ok: true, text: t('setCleared') });
+        } else {
+          setNote({ ok: false, text: body.error || t('setFailed') });
+        }
+      }
+
+      function renderCard(entry) {
+        const open = editing === entry.ref;
+        const working = busy === entry.ref;
+        return h(
+          'div',
+          { className: 'dshmp-set-card', key: entry.ref },
+          h(
+            'div',
+            { className: 'dshmp-set-top' },
+            h('span', { className: 'dshmp-set-name' }, String(entry.label || entry.id)),
+            h(
+              'span',
+              { className: 'dshmp-set-pill' + (entry.set ? ' on' : '') },
+              entry.set ? t('setStored') : t('setMissing')
+            )
+          ),
+          h(
+            'div',
+            { className: 'dshmp-set-meta' },
+            h('code', null, String(entry.ref || '')),
+            entry.consoleUrl
+              ? h(
+                  'a',
+                  { href: entry.consoleUrl, target: '_blank', rel: 'noreferrer noopener' },
+                  t('setConsole')
+                )
+              : null
+          ),
+          usageLine(entry, t),
+          open
+            ? h(
+                'div',
+                { className: 'dshmp-set-form' },
+                h('textarea', {
+                  className: 'dshmp-set-input',
+                  rows: 3,
+                  spellCheck: false,
+                  placeholder: t('setPlaceholder'),
+                  value: draft,
+                  onChange: (event) => setDraft(event.target.value),
+                }),
+                h(
+                  'div',
+                  { className: 'dshmp-set-actions' },
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'dshmp-set-btn primary',
+                      disabled: working || !draft.trim(),
+                      onClick: () => save(entry),
+                    },
+                    working ? t('setSaving') : t('setSave')
+                  ),
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'dshmp-set-btn',
+                      onClick: () => {
+                        setEditing('');
+                        setDraft('');
+                      },
+                    },
+                    t('setCancel')
+                  )
+                )
+              )
+            : h(
+                'div',
+                { className: 'dshmp-set-actions' },
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'dshmp-set-btn primary',
+                    onClick: () => {
+                      setEditing(entry.ref);
+                      setDraft('');
+                      setNote(null);
+                    },
+                  },
+                  entry.set ? t('setUpdate') : t('setAdd')
+                ),
+                entry.set
+                  ? h(
+                      'button',
+                      { type: 'button', className: 'dshmp-set-btn', disabled: working, onClick: () => clear(entry) },
+                      t('setClear')
+                    )
+                  : null
+              )
+        );
+      }
+
+      return h(
+        'div',
+        { className: 'dshmp-set' },
+        h('style', null, CSS),
+        h(
+          'div',
+          { className: 'dshmp-set-head' },
+          h('div', { className: 'dshmp-set-title' }, t('setTitle')),
+          h('div', { className: 'dshmp-set-sub' }, t('setSubtitle'))
+        ),
+        error
+          ? h(
+              'div',
+              { className: 'dshmp-set-err' },
+              t('setErr') + ': ' + error,
+              h('button', { type: 'button', className: 'dshmp-set-btn', onClick: load }, t('setRetry'))
+            )
+          : null,
+        note ? h('div', { className: 'dshmp-set-note' + (note.ok ? '' : ' bad') }, note.text) : null,
+        entries === null ? h('div', { className: 'dshmp-set-empty' }, t('loading')) : null,
+        entries && entries.length === 0 ? h('div', { className: 'dshmp-set-empty' }, t('setNone')) : null,
+        (entries || []).map(renderCard),
+        h('div', { className: 'dshmp-set-foot' }, t('setFoot'))
+      );
+    }
+
+    function apply(ctx) {
+      let locale = null;
+      try {
+        locale = (typeof ctx.get === 'function' && ctx.get('locale')) || ctx.locale;
         if (locale && typeof locale.register === 'function') {
           locale.register(NS, { zh, en });
           if (typeof locale.bind === 'function') locale.bind(NS);
@@ -1303,6 +1612,28 @@ window.__ModuleLoader__.load({
       } catch (e) {
         /* locale optional */
       }
+      /** Translator for surfaces the host does not bind (the settings tab). */
+      const localT = (key) => {
+        let active = '';
+        try {
+          if (locale && typeof locale.getLocale === 'function') active = String(locale.getLocale() || '');
+          else if (locale && typeof locale.getSnapshot === 'function') {
+            const snap = locale.getSnapshot();
+            active = String((snap && snap.active) || '');
+          }
+        } catch (e) {
+          active = '';
+        }
+        if (!active) {
+          try {
+            active = String(document.documentElement.lang || navigator.language || '');
+          } catch (e) {
+            active = '';
+          }
+        }
+        const dict = /^en/i.test(active) ? en : zh;
+        return dict[key] !== undefined ? dict[key] : key;
+      };
       ctx.inject(['slots', 'modelDirectories'], (scope) => {
         const slots =
           (scope && typeof scope.get === 'function' && scope.get('slots')) || (scope && scope.slots);
@@ -1325,6 +1656,25 @@ window.__ModuleLoader__.load({
           );
         } catch (e) {
           console.warn('[dsh-model-panel] failed to register model seat:', e);
+        }
+        // Settings → Plugins → Balance display. One localized page for the
+        // vendors whose usage only a console cookie can read.
+        try {
+          slots.inject('settings.plugins.tab', () =>
+            slots.register(
+              {
+                name: 'settings.plugins.tab',
+                id: 'dsh-model-panel',
+                order: 55,
+                label: () => localT('setTitle'),
+                locale: NS,
+                inject: () => ({ t: localT }),
+              },
+              CookieUsageTab
+            )
+          );
+        } catch (e) {
+          console.warn('[dsh-model-panel] failed to register settings tab:', e);
         }
       });
     }
@@ -1398,6 +1748,41 @@ window.__ModuleLoader__.load({
 .dshmp-retry{margin-top:10px;height:28px;padding:0 14px;border:1px solid var(--dsw-alias-border-l2,#d0d0d0);border-radius:7px;background:var(--dsw-alias-bg-layer-1,#f5f5f5);color:var(--dsw-alias-label-primary,#333);font-size:12px;cursor:pointer;}
 .dshmp-retry:hover{background:var(--dsw-alias-bg-layer-2,#ececec);}
 .dshmp-fail{margin:8px 2px 0;padding:7px 12px;font-size:11.5px;color:var(--dsw-alias-state-error-primary,#d93025);border:1px solid color-mix(in srgb,var(--dsw-alias-state-error-primary,#d93025) 35%,transparent);border-radius:8px;}
+/* Settings → Plugins → Balance display: cookie-only usage. */
+.dshmp-set{padding:4px 2px 18px;font-size:13px;color:var(--dsw-alias-label-primary,#333);}
+.dshmp-set-head{margin-bottom:14px;}
+.dshmp-set-title{font-size:15px;font-weight:600;margin-bottom:4px;}
+.dshmp-set-sub{font-size:12px;line-height:1.55;color:var(--dsw-alias-label-secondary,#666);max-width:64ch;}
+.dshmp-set-card{margin-bottom:10px;padding:12px 14px;border:1px solid var(--dsw-alias-border-l1,#e6e6e6);border-radius:10px;background:var(--dsw-alias-bg-base,#fff);}
+.dshmp-set-top{display:flex;align-items:center;gap:10px;}
+.dshmp-set-name{font-size:14px;font-weight:600;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dshmp-set-pill{flex:none;font-size:11px;line-height:1;padding:4px 8px;border-radius:999px;border:1px solid var(--dsw-alias-border-l2,#d0d0d0);color:var(--dsw-alias-label-tertiary,#999);}
+.dshmp-set-pill.on{color:var(--dsw-alias-brand-primary,#4a7cff);border-color:color-mix(in srgb,var(--dsw-alias-brand-primary,#4a7cff) 45%,transparent);background:color-mix(in srgb,var(--dsw-alias-brand-primary,#4a7cff) 10%,transparent);}
+.dshmp-set-meta{display:flex;align-items:center;gap:10px;margin-top:6px;font-size:11px;color:var(--dsw-alias-label-tertiary,#999);}
+.dshmp-set-meta code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--dsw-alias-label-secondary,#666);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dshmp-set-meta a{flex:none;color:var(--dsw-alias-brand-primary,#4a7cff);text-decoration:none;}
+.dshmp-set-meta a:hover{text-decoration:underline;}
+.dshmp-set-usage{display:flex;align-items:center;gap:10px;margin-top:9px;font-size:12px;color:var(--dsw-alias-label-secondary,#666);font-variant-numeric:tabular-nums;}
+.dshmp-set-usage.err{color:var(--dsw-alias-state-error-primary,#d93025);}
+.dshmp-set-plan{font-weight:600;color:var(--dsw-alias-label-primary,#333);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dshmp-set-bar{flex:none;width:120px;height:6px;border-radius:3px;background:var(--dsw-alias-border-l2,#d0d0d0);overflow:hidden;}
+.dshmp-set-bar-fill{display:block;height:100%;border-radius:3px;background:var(--dsw-alias-brand-primary,#4a7cff);transition:width .2s;}
+.dshmp-set-bar-fill.low{background:var(--dsw-alias-state-error-primary,#d93025);}
+.dshmp-set-pct{min-width:40px;}
+.dshmp-set-until{color:var(--dsw-alias-label-tertiary,#999);}
+.dshmp-set-form{margin-top:10px;}
+.dshmp-set-input{width:100%;box-sizing:border-box;min-height:62px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l2,#d0d0d0);border-radius:8px;background:var(--dsw-alias-bg-layer-1,#f5f5f5);color:var(--dsw-alias-label-primary,#333);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;line-height:1.5;outline:none;resize:vertical;}
+.dshmp-set-input:focus{border-color:var(--dsw-alias-brand-primary,#4a7cff);}
+.dshmp-set-actions{display:flex;gap:8px;margin-top:9px;}
+.dshmp-set-btn{height:28px;padding:0 12px;border:1px solid var(--dsw-alias-border-l2,#d0d0d0);border-radius:7px;background:var(--dsw-alias-bg-layer-1,#f5f5f5);color:var(--dsw-alias-label-primary,#333);font-size:12px;cursor:pointer;transition:background .12s,border-color .12s;}
+.dshmp-set-btn:hover:not(:disabled){background:var(--dsw-alias-bg-layer-2,#ececec);}
+.dshmp-set-btn:disabled{opacity:.55;cursor:default;}
+.dshmp-set-btn.primary{border-color:color-mix(in srgb,var(--dsw-alias-brand-primary,#4a7cff) 55%,transparent);background:color-mix(in srgb,var(--dsw-alias-brand-primary,#4a7cff) 16%,transparent);color:var(--dsw-alias-brand-primary,#4a7cff);font-weight:600;}
+.dshmp-set-err{display:flex;align-items:center;gap:10px;margin:0 0 10px;padding:8px 12px;font-size:12px;color:var(--dsw-alias-state-error-primary,#d93025);border:1px solid color-mix(in srgb,var(--dsw-alias-state-error-primary,#d93025) 35%,transparent);border-radius:8px;}
+.dshmp-set-note{margin:0 0 10px;font-size:12px;color:var(--dsw-alias-label-secondary,#666);}
+.dshmp-set-note.bad{color:var(--dsw-alias-state-error-primary,#d93025);}
+.dshmp-set-empty{padding:16px 2px;font-size:12px;color:var(--dsw-alias-label-tertiary,#999);}
+.dshmp-set-foot{margin-top:12px;font-size:11px;line-height:1.6;color:var(--dsw-alias-label-tertiary,#999);}
 `;
 
     const inject = ['slots', 'locale', 'sessions'];

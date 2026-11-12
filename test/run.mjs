@@ -134,6 +134,73 @@ const markCredit = clientSrc.indexOf("className: 'dshmp-pthird'")
 ok('count cell is the last column', markCount > markInfo && markInfo > markName)
 ok('credit badge sits inside the info cluster', markCredit > markInfo)
 
+// ------------------------------------------------ cookie-only usage settings
+console.log('\n[lib/cookie-setup.js]')
+const cookieSetup = await import(url.pathToFileURL(path.join(ROOT, 'lib/cookie-setup.js')).href)
+const registry = await import(url.pathToFileURL(path.join(ROOT, 'lib/registry.js')).href)
+eq('settings page lists qwen only', cookieSetup.COOKIE_PROVIDER_IDS, ['qwen-token-plan-cn'])
+
+const store = new Map()
+const fakeSecrets = {
+  read: async (ref) => store.get(ref) || null,
+  write: async (ref, value) => { store.set(ref, value) },
+  clear: async (ref) => { store.delete(ref); return true },
+}
+const adapters = registry.createAdapterSet({ cacheDir: path.join(HERE, '.tmp-cache') })
+const setup = cookieSetup.createCookieSetup({ adapters, secrets: fakeSecrets })
+const initial = await setup.list()
+eq('one entry is offered', initial.length, 1)
+eq('entry id', initial[0].id, 'qwen-token-plan-cn')
+eq('entry is unset', initial[0].set, false)
+eq('reference is the qwen console cookie', initial[0].ref, 'QWEN_TOKEN_PLAN_COOKIE')
+ok('entry carries a console link', /^https:\/\//.test(String(initial[0].consoleUrl)))
+
+const rejected = await setup.save('qwen-token-plan-cn', 'abc')
+eq('a non-cookie is rejected', rejected.ok, false)
+ok('the rejection names the expected shape', /cookie/i.test(String(rejected.error)))
+eq('nothing was stored', store.size, 0)
+
+const qwen = adapters.get('qwen-token-plan-cn')
+qwen.validate = async () => ({ ok: true, plan: 'Lite' })
+qwen.fetchSecret = async () => ({ status: 'ok', plan: 'Lite', usedPct: 12.5, endAt: 1_800_000_000_000 })
+const saved = await setup.save('qwen-token-plan-cn', 'Cookie: a=1; b=2')
+eq('a cookie is stored', saved.ok, true)
+eq('the stored value is normalised', store.get('QWEN_TOKEN_PLAN_COOKIE'), 'a=1; b=2')
+eq('save reports the plan it unlocked', saved.entry.plan, 'Lite')
+eq('save reports used percentage', saved.entry.usedPct, 12.5)
+ok('save never echoes the value', !JSON.stringify(saved).includes('a=1; b=2'))
+
+store.set('QWEN_TOKEN_PLAN_COOKIE', 'stale=1')
+const cleared = await setup.clear('qwen-token-plan-cn')
+eq('clear removes the cookie', cleared.cleared, true)
+eq('clear reports the entry as unset', cleared.entry.set, false)
+eq('the store is empty again', store.size, 0)
+
+console.log('\n[lib/providers/deepseek-account.js]')
+const account = (await import(url.pathToFileURL(path.join(ROOT, 'lib/providers/deepseek-account.js')).href)).default
+eq('account adapter id', account.id, 'deepseek-account')
+const wallet = {
+  getBalance: async () => ({
+    status: 'ready',
+    value: [{ currency: 'USD', balance: '1.00' }, { currency: 'CNY', balance: '12.50' }],
+    bonusWallets: [{ currency: 'CNY', balance: '3.00' }],
+  }),
+}
+const walletRow = await account.fetchSecret({}, { account: wallet })
+eq('wallets are never summed across currencies', walletRow.amount, 15.5)
+eq('the yuan wallet wins', walletRow.currency, 'CNY')
+eq('the granted part is reported apart', walletRow.bonus, 3)
+const signedOut = await account.fetchSecret({}, { account: { getBalance: async () => ({ status: 'signed-out' }) } })
+ok('a signed-out login is not an error row', signedOut.status !== 'ok')
+
+console.log('\n[settings tab]')
+ok('client registers the balance settings tab', clientSrc.includes("slots.inject('settings.plugins.tab'"))
+ok('client labels the tab from the dictionary', clientSrc.includes("localT('setTitle')"))
+ok('client posts the cookie to the secret route', clientSrc.includes('SECRET_ENDPOINT'))
+ok('host serves the settings route', indexSrc.includes("SETTINGS_ROUTE = '/dsh-model-panel/settings.json'"))
+ok('host serves the secret route', indexSrc.includes("SECRET_ROUTE = '/dsh-model-panel/secret.json'"))
+ok('host rejects non-POST secret writes', indexSrc.includes("req.method !== 'POST'"))
+
 // --------------------------------------------------------- release hygiene
 console.log('\n[release]')
 ok('MIT licence present', exists('LICENSE') && read('LICENSE').startsWith('MIT License'))

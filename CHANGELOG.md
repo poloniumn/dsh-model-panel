@@ -4,6 +4,37 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.0 — 2026-11-12
+
+### Added
+
+- **余额显示设置页 / balance display setting tab.** `设置 → 插件 → 余额显示`
+  registers its own `settings.plugins.tab` contribution. It never touches an API
+  key: it only stores a console cookie and renders the usage that keys cannot
+  read (plan name, used-percentage bar, period end). Only verified providers are
+  listed — Qwen Token Plan today; providers whose cookie protocol is still being
+  measured stay hidden rather than guessing.
+- Host routes `GET /dsh-model-panel/settings.json` and
+  `POST /dsh-model-panel/secret.json` (`{id, action:'save'|'clear', value}`), both
+  loopback-only like the existing state route. The cookie is normalised before it
+  is stored, written to the DSH credential store only, and never echoed back.
+- `images/banner.png` — a 1200×300 raster twin of the SVG banner, so the registry
+  page shows an image instead of a broken link. READMEs use `<picture>`: the SVG
+  on GitHub, the PNG everywhere else.
+
+### Fixed
+
+- **MiMo / xiaomi-token-plan-cn now reads the console like the console does.**
+  The balance moved to `https://platform.xiaomimimo.com/api/v1` with the console
+  cookie (`XIAOMI_TOKEN_PLAN_CN_COOKIE`), calling `/balance`,
+  `/tokenPlan/detail` and `/tokenPlan/usage`, and reading `pool.percent` as an
+  **already-used** ratio. The API-key path stays as a fallback.
+- **DeepSeek account balance no longer adds different currencies together.**
+  Wallets are bucketed by `currency`; CNY wins, otherwise the first currency
+  seen, and bonus wallets are reported separately instead of being folded into
+  the same number.
+- `is_available === false` on the DeepSeek platform balance now surfaces
+  「余额不足，请充值」 as a note instead of rendering a misleading 0.
 ## 0.2.1 — 2026-11-12
 
 ### Fixed

@@ -4,11 +4,14 @@
 
 # dsh-model-panel
 
-![banner](assets/banner.svg)
+<picture>
+  <source srcset="assets/banner.svg" type="image/svg+xml">
+  <img src="images/banner.png" alt="dsh-model-panel" width="100%">
+</picture>
 
 [![dsh-plugin](https://img.shields.io/badge/dsh--plugin-topic-0f172a?style=flat-square&logo=github)](https://github.com/topics/dsh-plugin)
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-0.2.1-38bdf8?style=flat-square)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.3.0-38bdf8?style=flat-square)](./package.json)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek%20Harness-Web%20Plugin-6366f1?style=flat-square)](https://github.com/topics/dsh-plugin)
 
 **An elegant model panel** — it replaces the composer's model seat with a searchable provider / model table.
@@ -23,7 +26,10 @@
 - **Per-model thinking toggle & effort slider**: one line with a fixed-width level name, the slider, and a reset slot that keeps the slider the same length with or without the button.
 - **Live balance & plan rows** in each provider's header.
 - **Channel credits side by side**, merged by channel name.
+- **Balance settings tab**: `Settings → Plugins → Balance display` is its own page. It stores only a console cookie and shows usage that API keys cannot reach (Qwen Token Plan today), without ever sending a key request.
 - **Self-read data path**: the browser half requests exactly one endpoint, `GET /dsh-model-panel/state.json`; credentials only ever go to the URL each adapter declares, the route is loopback-only with cross-site checks, cached for 60 s, and never rejects.
+
+> ⚠️ The author can only subscribe to a limited set of providers. Balance / usage figures for some of them — console-cookie endpoints in particular — may still be wrong. If you hit a display bug like that, a PR is very welcome, or open an issue with the raw response.
 
 ## Installation
 
@@ -65,6 +71,17 @@ Once installed, the composer's original model seat is replaced by the table pane
 - **Effort slider**: adjust reasoning effort (`dsh-model-panel.efforts`); the reset slot restores the default.
 - **Balance / plan / channel credits** appear in the provider header's right cluster; a channel with no configured account shows a zero balance, and a failed lookup shows a query failure instead of hiding the row.
 
+### Balance display (cookie usage)
+
+Some usage only exists behind a logged-in console and API keys cannot read it, so it gets a page of its own:
+
+1. Open `Settings → Plugins → Balance display`.
+2. Click **Set cookie** and paste the whole cookie header from a console request (`name=value; name2=value2`), then click **Save and test**.
+3. The usage is read back immediately: plan name, a used-percentage bar and the period end date. An expired cookie says so and asks you to paste a new one.
+4. **Clear** deletes that cookie from the local credential store.
+
+The cookie is written to the local DSH credential store only — never to the plugin config, logs or browser storage, and it is never echoed back. Only verified providers are listed (Qwen Token Plan for now); providers whose cookie protocol is still being measured stay hidden.
+
 ## Configuration
 
 | Item | Details |
@@ -72,6 +89,8 @@ Once installed, the composer's original model seat is replaced by the table pane
 | Requirements | the `conversation.input.model` seat and its slots (`dsh-client-ui-slots`, `dsh-client-locale`, `dsh-client-ui-model-selection`, `dsh-api-session-controller`); the host must expose a `webServer` able to register an exact route |
 | Optional integrations | `dsh-connect` (WorkBuddy / Trae / Qoder channel credits), Our Free Model (EAC router credits) — neither is required; a missing source contributes nothing |
 | Data endpoint | `GET /dsh-model-panel/state.json` — loopback-only, cross-site checked, 60 s cache |
+| Settings endpoints | `GET /dsh-model-panel/settings.json` (stored cookies and the usage they unlock), `POST /dsh-model-panel/secret.json` (`{id, action:'save'|'clear', value}`) — loopback-only as well |
+| Cookie secret name | `QWEN_TOKEN_PLAN_COOKIE` (Qwen Token Plan console session) |
 | Local storage | `dsh-model-panel.collapsed` (collapse state), `dsh-model-panel.off` (thinking toggle), `dsh-model-panel.efforts` (effort level) |
 
 **Development self-checks**:
