@@ -11,6 +11,7 @@
 
 [![dsh-plugin](https://img.shields.io/badge/dsh--plugin-topic-0f172a?style=flat-square&logo=github)](https://github.com/topics/dsh-plugin)
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)](./LICENSE)
+[![npm](https://img.shields.io/npm/v/dsh-model-panel?style=flat-square&color=cb3837&logo=npm)](https://www.npmjs.com/package/dsh-model-panel)
 [![Version](https://img.shields.io/badge/version-0.3.0-38bdf8?style=flat-square)](./package.json)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek%20Harness-Web%20Plugin-6366f1?style=flat-square)](https://github.com/topics/dsh-plugin)
 
@@ -53,13 +54,31 @@
 
 This package is a DSH Cordis bundle (Web plugin). Either path works:
 
-**Option A — Plugin Manager (recommended)**
+**Option A — npm (recommended)**
+
+1. Inside the web profile directory:
+
+   ```bash
+   npm install dsh-model-panel
+   ```
+
+   (Package page: [npmjs.com/package/dsh-model-panel](https://www.npmjs.com/package/dsh-model-panel))
+
+2. Register the bundle in that profile's `package.json`:
+
+   ```json
+   "dsh": { "profile": { "bundles": ["dsh-model-panel"] } }
+   ```
+
+3. Restart the Harness. To upgrade later: `npm update dsh-model-panel`, then restart.
+
+**Option B — Plugin Manager**
 
 1. Open `plugin_manager → install_bundle` in the Harness UI.
 2. Set `target` to the absolute path of this repository directory.
 3. A first install can activate through HMR; replacing an already installed copy needs a Harness restart to load a fresh JavaScript module generation.
 
-**Option B — Write it into the web profile manually**
+**Option C — Write it into the web profile manually**
 
 1. Add the package to the web profile's `package.json` under `dependencies`:
 

@@ -11,6 +11,7 @@
 
 [![dsh-plugin](https://img.shields.io/badge/dsh--plugin-topic-0f172a?style=flat-square&logo=github)](https://github.com/topics/dsh-plugin)
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)](./LICENSE)
+[![npm](https://img.shields.io/npm/v/dsh-model-panel?style=flat-square&color=cb3837&logo=npm)](https://www.npmjs.com/package/dsh-model-panel)
 [![Version](https://img.shields.io/badge/version-0.3.0-38bdf8?style=flat-square)](./package.json)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek%20Harness-Web%20Plugin-6366f1?style=flat-square)](https://github.com/topics/dsh-plugin)
 
@@ -53,13 +54,31 @@
 
 本插件是 DSH Cordis Bundle（Web 插件），任选其一：
 
-**方式一：插件管理器（推荐）**
+**方式一：npm 安装（推荐）**
+
+1. 在 web profile 目录执行：
+
+   ```bash
+   npm install dsh-model-panel
+   ```
+
+   （包地址：[npmjs.com/package/dsh-model-panel](https://www.npmjs.com/package/dsh-model-panel)）
+
+2. 在该 profile 的 `package.json` 里登记 bundle：
+
+   ```json
+   "dsh": { "profile": { "bundles": ["dsh-model-panel"] } }
+   ```
+
+3. 重启 Harness 后生效；升级只需 `npm update dsh-model-panel` 再重启。
+
+**方式二：插件管理器**
 
 1. 打开 Harness UI 的插件管理器：`plugin_manager → install_bundle`
 2. `target` 填入本仓库目录的绝对路径
 3. 首次安装可通过 HMR 直接激活；替换已安装副本需重启 Harness 加载新的 JS 模块代。
 
-**方式二：手动写入 web profile**
+**方式三：手动写入 web profile**
 
 1. 在 web profile 的 `package.json` 的 `dependencies` 中添加本包：
 
