@@ -4,7 +4,27 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.2.0 — 2026-11-11
+## 0.2.1 — 2026-11-12
+
+### Fixed
+
+- `package.json` `author` now reads `poloniumn`, matching the `LICENSE` copyright
+  holder instead of the unrelated name `YG`.
+- `files` now ships `assets/`, `images/` and `README_EN.md`. The banner and the
+  screenshot that `README.md` links to were left out of the tarball, so both
+  images would have 404'd on the registry page while looking fine on GitHub.
+- `npm run check` also syntax-checks `test/run.mjs`; CI previously covered only
+  the two plugin halves.
+- README (both languages) no longer calls this a "plugin picker" in its tagline —
+  it is a model panel. The closing note that was addressed to an assistant was
+  replaced with plain screenshot conventions.
+- Installation option B now registers the package under `dsh.profile.bundles`,
+  which is the mechanism a profile actually reads, instead of telling people to
+  hand-write an `insert` block into `cordis.patch.yml`.
+- The 0.2.0 section below was dated 2026-11-11; that release shipped on
+  2026-11-12.
+
+## 0.2.0 — 2026-11-12
 
 ### Changed
 

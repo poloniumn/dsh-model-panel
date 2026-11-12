@@ -8,10 +8,10 @@
 
 [![dsh-plugin](https://img.shields.io/badge/dsh--plugin-topic-0f172a?style=flat-square&logo=github)](https://github.com/topics/dsh-plugin)
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-0.2.0-38bdf8?style=flat-square)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.2.1-38bdf8?style=flat-square)](./package.json)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek%20Harness-Web%20Plugin-6366f1?style=flat-square)](https://github.com/topics/dsh-plugin)
 
-**An elegant dialog-based plugin picker** — it replaces the composer's model seat with a searchable provider/model table.
+**An elegant model panel** — it replaces the composer's model seat with a searchable provider / model table.
 
 </div>
 
@@ -43,12 +43,14 @@ This package is a DSH Cordis bundle (Web plugin). Either path works:
    "dsh-model-panel": "file:C:/path/to/dsh-model-panel"
    ```
 
-2. Add the entry to the `insert` list of `cordis.patch.yml` (shipped with this plugin):
+2. Register the package name in that same `package.json` under `dsh.profile.bundles` — the bundle's own patch is expanded from there, so no hand-written `cordis.patch.yml` entry is needed:
 
-   ```yaml
-   - insert:
-       - id: dsh-model-panel
-         name: dsh-model-panel
+   ```json
+   "dsh": {
+     "profile": {
+       "bundles": ["dsh-model-panel"]
+     }
+   }
    ```
 
 3. Restart the Harness to activate it.
@@ -95,7 +97,7 @@ npm test        # test/run.mjs — no dependencies, no network
 | Provider header | Balance (¥9.75), plan progress (2%), channel credits and model count on one line |
 | Model row | Thinking toggle + effort slider (High etc.) + one-click reset |
 
-> 📷 Drop more screenshots into `images/` and I will extend this grid.
+> 📷 Screenshots live in `images/`, named `<scene>-<view>.png` — one light theme, one dark.
 
 ## License
 

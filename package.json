@@ -1,6 +1,6 @@
 {
   "name": "dsh-model-panel",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A table-style model panel for the DeepSeek Harness composer: provider tree in model-directory order with third-party channels last, remembered collapse, model search, per-model thinking toggle and effort slider, plus self-hosted balance, plan and channel-credit rows in each provider header.",
   "keywords": [
     "dsh",
@@ -13,7 +13,7 @@
   ],
   "type": "module",
   "license": "MIT",
-  "author": "YG",
+  "author": "poloniumn",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/poloniumn/dsh-model-panel.git"
@@ -37,12 +37,16 @@
     "locale/*.json",
     "icon.svg",
     "lib",
+    "test",
+    "assets",
+    "images",
     "README.md",
+    "README_EN.md",
     "CHANGELOG.md",
     "LICENSE"
   ],
   "scripts": {
-    "check": "node --check index.js && node --check client.js",
+    "check": "node --check index.js && node --check client.js && node --check test/run.mjs",
     "test": "node test/run.mjs"
   },
   "dsh": {

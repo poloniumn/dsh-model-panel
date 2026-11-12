@@ -8,10 +8,10 @@
 
 [![dsh-plugin](https://img.shields.io/badge/dsh--plugin-topic-0f172a?style=flat-square&logo=github)](https://github.com/topics/dsh-plugin)
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-0.2.0-38bdf8?style=flat-square)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.2.1-38bdf8?style=flat-square)](./package.json)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek%20Harness-Web%20Plugin-6366f1?style=flat-square)](https://github.com/topics/dsh-plugin)
 
-**优雅的对话框插件选择器** —— 把输入框的模型选择位，换成一张可搜索的服务商/模型表格。
+**优雅的模型选择面板** —— 把输入框的模型选择位，换成一张可搜索的服务商 / 模型表格。
 
 </div>
 
@@ -43,12 +43,14 @@
    "dsh-model-panel": "file:C:/path/to/dsh-model-panel"
    ```
 
-2. 在 `cordis.patch.yml` 的 `insert` 列表中加入对应条目（即本插件自带的 patch）：
+2. 在同一个 `package.json` 的 `dsh.profile.bundles` 数组里登记包名（bundle 自带的 patch 会随之展开，不需要手写 `cordis.patch.yml`）：
 
-   ```yaml
-   - insert:
-       - id: dsh-model-panel
-         name: dsh-model-panel
+   ```json
+   "dsh": {
+     "profile": {
+       "bundles": ["dsh-model-panel"]
+     }
+   }
    ```
 
 3. 重启 Harness 后生效。
@@ -95,7 +97,7 @@ npm test        # test/run.mjs，无依赖、无网络
 | 服务商表头 | 余额（¥9.75）、套餐进度（2%）、渠道积分与模型数同屏 |
 | 模型行 | 思考开关 + 思考强度滑条（High 等档位）+ 一键重置 |
 
-> 📷 更多截图可继续放入 `images/` 目录，我会按网格补进本区。
+> 📷 截图统一放在 `images/` 目录，命名 `<场景>-<视图>.png`，浅色与深色主题各存一张。
 
 ## 许可证
 
