@@ -4,6 +4,37 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.3 — 2026-11-13
+
+### Fixed
+
+- **The night discount is matched per model, not per provider.** A Qwen token
+  plan publishes two groups in one window — `4 折` for the Qwen3.8 models and
+  `5 折` for the DeepSeek-V4 ones — and the panel used to read only the first
+  group. `Auto` sits in that first group, so every model looked like the same
+  group and the DeepSeek-V4 rows showed the wrong multiplier. Each row now
+  resolves its own group.
+- **Catalog ids are matched, not display names.** The catalog advertises
+  `DeepSeek-V4.1-Flash` while the profile carries
+  `deepseek-v4.1-flash-1017`, so the old exact-name test never matched and no
+  row turned green. Ids are compared exactly, then as folded keys (case,
+  spacing, separators and a trailing revision number removed), then against the
+  display names an older cache carries.
+- **A group no longer gets swallowed by `Auto`.** The first group used to
+  collapse into a single wildcard that applied to everything.
+
+### Added
+
+- **A group-level chip in the provider header.** When a provider's models sit in
+  several discount groups, the header shows the lowest multiplier it covers
+  (`0.4x`), and the hover text lists every rate in the group
+  (`22:00-08:00 · 0.4x / 0.5x`).
+
+### Internal
+
+- The discount cache carries `schema: 2`. A cache written by an older build is
+  rejected and refetched immediately, and its `models` names are folded into the
+  new per-group `ids`/`keys`/`names` shape when the fetch fails.
 ## 0.4.2 — 2026-11-13
 
 ### Fixed

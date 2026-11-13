@@ -380,36 +380,112 @@ window.__ModuleLoader__.load({
       return from + '-' + to;
     }
 
-    /**
-     * Price multiplier in effect right now — DeepSeek off-peak is 0.5x, the
-     * token plans discount inside their night window (0.8x MiMo, 0.4x Qwen).
-     * Returns null when the provider is at full price.
-     */
-    function discountState(now, row) {
-      if (!row) return null;
-      const id = String(row.id || '');
-      if (id === 'deepseek' || id === 'deepseek-account') {
-        return isPeak(now, row) === false ? { rate: '0.5', note: '', models: [] } : null;
-      }
+    /** Same fold as `normalizeModelKey` in lib/qwen-discount.js (the client cannot import ESM). */
+    function normModelKey(value) {
+      return String(value == null ? '' : value)
+        .toLowerCase()
+        .replace(/[\s._-]+/g, '')
+        .replace(/\d{2,4}$/, '');
+    }
+
+    /** The night window plus its badge groups while the window is open. */
+    function nightState(now, row) {
       const win = windowRange(row);
       if (!win) return null;
       if (!inWindow(beijingMinutes(now), win.startMinute, win.endMinute)) return null;
-      // rows listing explicit models only discount those models
-      let discount = NaN;
-      let models = [];
-      if (Array.isArray(row.nightBadges) && row.nightBadges.length) {
-        const badge = row.nightBadges[0] || {};
-        discount = Number(badge.discount);
-        if (Array.isArray(badge.models)) models = badge.models.map((x) => String(x));
-      }
-      if (!Number.isFinite(discount) || discount <= 0) discount = 8;
-      const rate = discount >= 10 ? discount / 100 : discount / 10;
-      return { rate: String(Math.round(rate * 100) / 100), note: windowLabel(win), models };
+      const badges = Array.isArray(row.nightBadges) ? row.nightBadges : [];
+      return { win, note: windowLabel(win), badges };
     }
 
+    /** `4` → `0.4`; a group without a readable discount falls back to 0.8x. */
+    function badgeRate(badge) {
+      const discount = Number(badge && badge.discount);
+      const value = Number.isFinite(discount) && discount > 0 ? discount : 8;
+      const rate = value >= 10 ? value / 100 : value / 10;
+      return String(Math.round(rate * 100) / 100);
+    }
+
+    /**
+     * The badge group that covers `model`, or null.
+     *
+     * The catalog advertises the discount per model, and a window may hold
+     * several groups (4 折 for Qwen3.8, 5 折 for DeepSeek-V4). A profile id
+     * rarely equals the catalog id (`deepseek-v4.1-flash-1017` vs
+     * `DeepSeek-V4.1-Flash`), so ids are compared exactly first, then as folded
+     * keys, then against the display names an older cache carried. A group that
+     * lists no model at all applies to everything (MiMo ships exactly that).
+     */
+    function badgeFor(night, model) {
+      if (!night || !Array.isArray(night.badges) || !night.badges.length) return null;
+      const id = String(model && model.id != null ? model.id : '');
+      const key = normModelKey(id);
+      for (const badge of night.badges) {
+        if (Array.isArray(badge && badge.ids) && badge.ids.indexOf(id) >= 0) return badge;
+      }
+      for (const badge of night.badges) {
+        if (badge && Array.isArray(badge.keys) && badge.keys.indexOf(key) >= 0) return badge;
+      }
+      for (const badge of night.badges) {
+        const names = badge && Array.isArray(badge.models) ? badge.models : null;
+        if (names && names.map(normModelKey).indexOf(key) >= 0) return badge;
+      }
+      for (const badge of night.badges) {
+        const bare = badge
+          && (!Array.isArray(badge.ids) || !badge.ids.length)
+          && (!Array.isArray(badge.keys) || !badge.keys.length)
+          && (!Array.isArray(badge.models) || !badge.models.length);
+        if (bare) return badge;
+      }
+      return null;
+    }
+
+    /** The multiplier that applies to one model right now, or null. */
+    function modelDiscount(now, row, model) {
+      if (!row) return null;
+      const id = String(row.id || '');
+      if (id === 'deepseek' || id === 'deepseek-account') {
+        return isPeak(now, row) === false ? { rate: '0.5', note: '', rates: ['0.5'] } : null;
+      }
+      const night = nightState(now, row);
+      if (!night) return null;
+      if (!night.badges.length) {
+        // A plan that publishes a window but no badge list applies one rate to
+        // every model in the group.
+        return { rate: '0.8', note: night.note, rates: ['0.8'] };
+      }
+      const badge = badgeFor(night, model);
+      if (!badge) return null;
+      const rate = badgeRate(badge);
+      return { rate, note: night.note, rates: [rate] };
+    }
+
+    /** The discounts live in this provider right now, grouped into one header hint. */
+    function groupDiscount(now, row, list) {
+      if (!row) return null;
+      const id = String(row.id || '');
+      if (id === 'deepseek' || id === 'deepseek-account') return modelDiscount(now, row, null);
+      const night = nightState(now, row);
+      if (!night) return null;
+      if (!Array.isArray(list) || !list.length) return modelDiscount(now, row, null);
+      const rates = [];
+      for (const model of list) {
+        const found = modelDiscount(now, row, model);
+        if (found && rates.indexOf(found.rate) < 0) rates.push(found.rate);
+      }
+      if (!rates.length) return null;
+      rates.sort((a, b) => Number(a) - Number(b));
+      return { rate: rates[0], note: night.note, rates };
+    }
+
+    /**
+     * Hover text for a discount chip. One rate reads exactly as before; a
+     * provider whose models sit in different groups (`0.4x` Qwen3.8 and `0.5x`
+     * DeepSeek-V4) lists every rate it actually covers.
+     */
     function discountTitle(t, disc) {
       if (!disc) return undefined;
-      const tail = disc.rate + 'x';
+      const rates = Array.isArray(disc.rates) && disc.rates.length ? disc.rates : [disc.rate];
+      const tail = rates.map((r) => r + 'x').join(' / ');
       return disc.note ? disc.note + ' · ' + tail : tr(t, 'offPeak') + ' · ' + tail;
     }
 
@@ -1045,7 +1121,9 @@ window.__ModuleLoader__.load({
       const boxes = ordered.map((entry, entryIndex) => {
         const g = entry.g;
         const row = matchBalanceRow(balanceRows, g);
-        const discount = discountState(now, row);
+        // The header hint covers the provider's whole catalogue, so a search
+        // filter does not make the discount chip flicker.
+        const discount = groupDiscount(now, row, Array.isArray(g.models) ? g.models : entry.list);
         const credit = thirdByEntry.get(entry) || null;
 
         let info = null;
@@ -1102,8 +1180,7 @@ window.__ModuleLoader__.load({
             const off = offLevelOf(r);
             const steps = stepsOf(r, off && off.id);
             const isCur = isCurrent(g, m);
-            const models = discount && Array.isArray(discount.models) ? discount.models : [];
-            const rowDiscount = discount && (!models.length || models.indexOf(String(m.id)) >= 0) ? discount : null;
+            const rowDiscount = modelDiscount(now, row, m);
             const raw = rawEffort({ state, key, isCurrent: isCur, model: m, efforts, offKeys, offId: off && off.id, steps });
             const isOff = Boolean(off && raw === off.id);
             const nameText = m.name || m.id;
@@ -1210,6 +1287,11 @@ window.__ModuleLoader__.load({
             h(
               'span',
               { className: 'dshmp-pinfo' },
+              // The header chip keeps the discount visible while the group is
+              // folded; the tooltip lists every rate the models actually carry.
+              discount
+                ? h('span', { className: 'dshmp-mult dshmp-mult-head', title: discountTitle(t, discount) }, discount.rate + 'x')
+                : null,
               credit
                 ? h('span', { className: 'dshmp-pthird', title: credit.kind || undefined }, creditLabel(credit, t))
                 : null,
@@ -1803,7 +1885,7 @@ window.__ModuleLoader__.load({
 .dshmp-head{display:grid;grid-template-columns:minmax(0,1fr) 64px 250px;gap:10px;padding:4px 16px 8px;color:var(--dsw-alias-label-tertiary,#999);font-size:11px;}
 .dshmp-body{flex:1;min-height:0;overflow-y:auto;padding:0 10px 10px;}
 .dshmp-pgroup{margin:8px 2px;border:1px solid var(--dsw-alias-border-l1,#e6e6e6);border-radius:10px;background:var(--dsw-alias-bg-base,#fff);overflow:visible;}
-.dshmp-pgroup.discount{background:color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 92%,#22c55e);border-color:color-mix(in srgb,var(--dsw-alias-border-l1,#e6e6e6) 55%,#22c55e);}
+.dshmp-pgroup.discount{background:color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 88%,#22c55e);border-color:color-mix(in srgb,var(--dsw-alias-border-l1,#e6e6e6) 50%,#22c55e);}
 .dshmp-phead{position:sticky;top:0;z-index:2;display:grid;grid-template-columns:14px minmax(0,1fr) max-content 72px;column-gap:8px;align-items:center;padding:11px 14px;border-radius:10px 10px 0 0;background:inherit;cursor:pointer;user-select:none;}
 .dshmp-pgroup:not(:has(.dshmp-row)) .dshmp-phead{border-radius:10px;}
 .dshmp-phead:hover{background:var(--dsw-alias-bg-layer-1,#f5f5f5);}
@@ -1834,6 +1916,7 @@ window.__ModuleLoader__.load({
 .dshmp-namewrap{display:flex;align-items:center;gap:6px;min-width:0;}
 .dshmp-name{display:block;flex:1 1 auto;min-width:0;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .dshmp-mult{flex:none;padding:0 5px;border-radius:5px;font-size:10.5px;font-weight:700;line-height:15px;letter-spacing:.2px;color:#15803d;background:color-mix(in srgb,#22c55e 15%,transparent);border:1px solid color-mix(in srgb,#22c55e 40%,transparent);font-variant-numeric:tabular-nums;}
+.dshmp-mult-head{font-size:10px;line-height:14px;padding:0 6px;background:color-mix(in srgb,#22c55e 22%,transparent);border-color:color-mix(in srgb,#22c55e 52%,transparent);}
 .dshmp-cell{display:flex;justify-content:center;align-items:center;min-width:0;}
 .dshmp-cell-effort{align-items:center;}
 .dshmp-dash{color:var(--dsw-alias-label-tertiary,#999);text-align:center;}

@@ -134,6 +134,57 @@ const markCredit = clientSrc.indexOf("className: 'dshmp-pthird'")
 ok('count cell is the last column', markCount > markInfo && markInfo > markName)
 ok('credit badge sits inside the info cluster', markCredit > markInfo)
 
+// ------------------------------------------------------------ discount chips
+console.log('\n[lib/qwen-discount.js]')
+const qd = await import(url.pathToFileURL(path.join(ROOT, 'lib/qwen-discount.js')).href)
+
+// The live catalogue shape: `auto` and Qwen3.8 fall in the 4 折 group, the
+// DeepSeek-V4 ids in the 5 折 one, and a promotion without a night window
+// ("限时2折") must stay out of both.
+const CATALOG = [
+  { modelId: 'auto', name: '{"zh-CN":"Auto"}', badgeLabel: '限时夜间4折', badgeDescription: '每晚 22:00 - 次日 08:00 期间调用模型，Credits 消耗低至 4 折。' },
+  { modelId: 'qwen3.8-max', name: '{"zh-CN":"Qwen3.8-Max"}', badgeLabel: '限时夜间4折', badgeDescription: '每晚 22:00 - 次日 08:00 期间调用模型，Credits 消耗低至 4 折。' },
+  { modelId: 'qwen3.8-flash', name: '{"zh-CN":"Qwen3.8-Flash"}', badgeLabel: '限时夜间4折', badgeDescription: '每晚 22:00 - 次日 08:00 期间调用模型，Credits 消耗低至 4 折。' },
+  { modelId: 'qwen3.7-plus', name: '{"zh-CN":"Qwen3.7-Plus"}' },
+  { modelId: 'deepseek-v4.1-flash-1017', name: '{"zh-CN":"DeepSeek-V4.1-Flash-1017"}', badgeLabel: '限时夜间 5 折', badgeDescription: '每晚 22:00 - 次日 08:00 期间调用模型，Credits 消耗低至 5 折。' },
+  { modelId: 'deepseek-v4-pro-0813', name: '{"zh-CN":"DeepSeek-V4-Pro-0813"}', badgeLabel: '限时夜间5折', badgeDescription: '限时夜间优惠：每晚 22:00 - 次日 08:00 期间调用模型，Credits 消耗低至 5 折。' },
+  { modelId: 'qwen4-max-preview', name: '{"zh-CN":"Qwen4.0-Max-Preview"}', badgeLabel: '限时2折', badgeDescription: 'Credits消耗限时2折' },
+  { modelId: 'decision-model-preview', name: '{"zh-CN":"decision-model-preview"}', badgeLabel: '限时免费', badgeDescription: '面向高频业务判断的结构化决策模型。' },
+]
+
+const badges = qd.parseBadges(CATALOG)
+eq('parseBadges groups by discount', badges.map((b) => b.discount), ['4', '5'])
+eq('parseBadges keeps the whole 4 折 group', badges[0].ids, ['auto', 'qwen3.8-max', 'qwen3.8-flash'])
+eq('parseBadges keeps the whole 5 折 group', badges[1].ids, ['deepseek-v4.1-flash-1017', 'deepseek-v4-pro-0813'])
+ok('parseBadges does not collapse a group to "auto"', badges[0].ids.length > 1 && badges[0].ids.indexOf('auto') >= 0)
+ok('parseBadges ranks ids as folded keys', badges[0].keys.indexOf('qwen38flash') >= 0)
+ok('parseBadges drops a promotion with no night window', badges.every((b) => b.ids.every((id) => id !== 'qwen4-max-preview')))
+eq('parseBadges reads the shared window', qd.parseWindow(CATALOG), { startHour: 22, startMinute: 0, endHour: 8, endMinute: 0 })
+
+eq('normalizeModelKey folds a revision suffix', qd.normalizeModelKey('deepseek-v4.1-flash-1017'), qd.normalizeModelKey('deepseek-v4.1-flash'))
+eq('normalizeModelKey folds case and separators', qd.normalizeModelKey('DeepSeek-V4-Pro'), qd.normalizeModelKey('deepseek-v4-pro-0813'))
+eq('normalizeModelKey folds a display name', qd.normalizeModelKey('Qwen3.8-Flash'), 'qwen38flash')
+ok('normalizeModelKey keeps Auto distinct from a Qwen id', qd.normalizeModelKey('Auto') !== qd.normalizeModelKey('qwen3.8-flash'))
+
+const lifted = qd.upgradeBadges([{ discount: '5', models: ['DeepSeek-V4.1-Flash'] }, { discount: '4', models: ['Auto'] }])
+eq('upgradeBadges keeps the discount', lifted.map((b) => b.discount), ['5', '4'])
+eq('upgradeBadges folds legacy names into keys', lifted[0].keys, ['deepseekv41flash'])
+eq('upgradeBadges leaves an id list empty', lifted[0].ids, [])
+eq('upgradeBadges folds the legacy auto name', lifted[1].keys, ['auto'])
+
+console.log('\n[client.js discount chips]')
+ok('client folds ids with the library fold', clientSrc.includes('function normModelKey(value)'))
+ok('client derives the night state once', clientSrc.includes('function nightState(now, row)'))
+ok('client resolves a badge per model', clientSrc.includes('function badgeFor(night, model)'))
+ok('client exposes a per-model multiplier', clientSrc.includes('function modelDiscount(now, row, model)'))
+ok('client exposes a per-provider multiplier', clientSrc.includes('function groupDiscount(now, row, list)'))
+ok('client no longer reads only the first badge', !clientSrc.includes('row.nightBadges[0]'))
+ok('client matches every row on its own', clientSrc.includes('const rowDiscount = modelDiscount(now, row, m);'))
+ok('client header chip covers the whole catalogue', clientSrc.includes('groupDiscount(now, row, Array.isArray(g.models) ? g.models : entry.list)'))
+ok('client header title lists every rate', clientSrc.includes("rates.map((r) => r + 'x').join(' / ')"))
+ok('client renders the folded-group chip', clientSrc.includes("className: 'dshmp-mult dshmp-mult-head'"))
+ok('client styles the header chip', clientSrc.includes('.dshmp-mult-head{'))
+
 // ------------------------------------------------ cookie-only usage settings
 console.log('\n[lib/cookie-setup.js]')
 const cookieSetup = await import(url.pathToFileURL(path.join(ROOT, 'lib/cookie-setup.js')).href)

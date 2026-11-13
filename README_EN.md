@@ -42,7 +42,10 @@
 - **Provider tree**: drawn in the model directory's own order, with collapse state remembered in localStorage (`dsh-model-panel.collapsed`). When every group declares a numeric rank (`order` / `seq` / `index` / `position` / `rank`) that rank is honoured; a partial rank list is ignored so the list is never half-reshuffled.
 - **Third-party channels sink to the bottom**: a provider fed by a third-party channel is always drawn after the plain ones.
 - **Focus on open**: with no saved fold state (first run) only the provider holding the current model is expanded and the rest start folded; after that your own expand/collapse choices are remembered, and opening the panel just re-opens the current model's provider. The selected row is highlighted with a brand-colour gradient.
-- **Discount multiplier**: while a low-price window is active the provider header turns soft green and the model name gains a multiplier chip — DeepSeek off-peak `0.5x`, Qwen Token Plan `0.4x` from 22:00 to 08:00 Beijing time, MiMo Token Plan `0.8x` from 00:00 to 08:00.
+- **Discount multiplier, matched per model**: while a low-price window is active the provider header turns soft green and every model row shows the multiplier of its own group, while the header chip carries the lowest multiplier the provider covers and the hover text lists all of them.
+  - DeepSeek off-peak: `0.5x` (outside the weekday 12:00–14:00 and 18:00–20:00 peak windows).
+  - Qwen Token Plan, 22:00–08:00 Beijing time: `0.4x` for the Qwen3.8 models and `0.5x` for the DeepSeek-V4 ones, with `Auto` in the 0.4 group. A catalog id that differs from the profile id (`DeepSeek-V4.1-Flash` vs `deepseek-v4.1-flash-1017`) still lands in the right group, and a model outside the night promotion — such as `qwen4-max-preview` with its limited-time 2 折 — stays uncoloured.
+  - MiMo Token Plan, 00:00–08:00 daily: `0.8x` for the whole group.
 - **Per-model thinking toggle & effort slider**: one line with a fixed-width level name, the slider, and a reset slot that keeps the slider the same length with or without the button.
 - **Live balance & plan rows** in each provider's header.
 - **Channel credits side by side**, merged by channel name.
