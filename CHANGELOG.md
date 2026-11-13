@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.2 — 2026-11-13
+
+### Fixed
+
+- **A credential ref is now derived from the provider id.** Some routes store
+  their key under the id's own uppercase name (`kimi-coding` →
+  `KIMI_CODING_API_KEY`) without declaring `apiKeyEnv` in the profile; the row
+  used to resolve nothing and render an empty header. The derived name is tried
+  after the profile ref and the adapter's own refs, together with a
+  `process.env` fallback.
+- **An unresolved row says so.** A provider whose balance row is not `ok` now
+  renders a muted `—` with the reason on hover (missing key, expired cookie,
+  vendor error) instead of rendering nothing at all.
+
+### Added
+
+- **`last-state.json` diagnostics.** Every collected state is written to the
+  plugin cache directory, so a row that shows no number can be inspected
+  without opening the panel. Rows never contain credential values.
+
 ## 0.4.1 — 2026-11-13
 
 ### Fixed

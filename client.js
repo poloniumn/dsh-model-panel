@@ -1079,6 +1079,18 @@ window.__ModuleLoader__.load({
               );
             }
           }
+        } else if (row && row.status !== 'console') {
+          // A row that exists but has no number says why on hover instead of
+          // silently rendering nothing (a missing key, an expired cookie, a
+          // vendor error).
+          info = h(
+            'span',
+            {
+              className: 'dshmp-money dshmp-muted',
+              title: row.detail || row.status || undefined,
+            },
+            '—'
+          );
         }
 
         const rows = [];
@@ -1804,6 +1816,7 @@ window.__ModuleLoader__.load({
 .dshmp-pcount{display:inline-flex;align-items:center;justify-self:stretch;height:20px;box-sizing:border-box;padding:0 0 0 8px;font-size:12px;line-height:1;color:var(--dsw-alias-label-tertiary,#999);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .dshmp-pinfo{display:flex;align-items:center;gap:8px;justify-self:end;min-width:0;}
 .dshmp-money{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary,#333);font-variant-numeric:tabular-nums;}
+.dshmp-muted{font-weight:400;color:var(--dsw-alias-label-tertiary,#999);opacity:.75;cursor:help;}
 .dshmp-plan{display:inline-flex;align-items:center;gap:8px;}
 .dshmp-bar{width:84px;height:6px;border-radius:3px;background:var(--dsw-alias-border-l2,#d0d0d0);overflow:hidden;}
 .dshmp-bar-fill{display:block;height:100%;border-radius:3px;background:var(--dsw-alias-brand-primary,#4a7cff);transition:width .2s;}

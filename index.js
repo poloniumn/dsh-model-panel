@@ -19,6 +19,7 @@
  * Everything is read-only towards the vendors: a resolved credential is sent
  * only to the URL declared by that provider's adapter, never to a user URL.
  */
+import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -117,6 +118,23 @@ export function apply(ctx, config) {
   let inflight = null
 
   /**
+   * The last state the browser asked for, on disk. Balance rows never carry a
+   * credential value, so this file is safe to keep — and it is the only way to
+   * see why a provider rendered no number when the panel itself is closed.
+   */
+  function recordDiagnostics(state) {
+    try {
+      fs.mkdirSync(cacheDir, { recursive: true })
+      fs.writeFileSync(
+        path.join(cacheDir, 'last-state.json'),
+        JSON.stringify({ at: new Date().toISOString(), rows: state.rows, thirdParty: state.thirdParty }, null, 1)
+      )
+    } catch {
+      /* diagnostics are best-effort */
+    }
+  }
+
+  /**
    * Live provider ids from the profile's llm-pi-ai config, with displayName /
    * apiKeyEnv renames applied. Same semantics as the adapters under ./lib/providers.
    */
@@ -200,6 +218,13 @@ export function apply(ctx, config) {
       // router's `apiKeyEnv`. Key-backed adapters may follow the rename, but
       // only when it actually resolves.
       const candidates = secretRefCandidates(shaped.secret, meta.keyRef)
+      // The provider id itself names a credential ref the DSH client writes when
+      // the route has no explicit `apiKeyEnv` (kimi-coding -> KIMI_CODING_API_KEY).
+      // Last resort, so an explicit profile ref still wins.
+      if (shaped.secret.type !== 'cookie') {
+        const canonical = String(id).toUpperCase().replace(/[^A-Z0-9]+/g, '_') + '_API_KEY'
+        if (!candidates.some((item) => item.ref === canonical)) candidates.push({ ref: canonical, auth: 'key' })
+      }
       let ref = candidates[0] ? candidates[0].ref : shaped.secret.ref
       let auth = candidates[0] ? candidates[0].auth : 'key'
       let secret = null
@@ -215,6 +240,18 @@ export function apply(ctx, config) {
           auth = candidate.auth
           secret = value
           break
+        }
+      }
+      if (!secret) {
+        // A route may also carry its key in the process environment.
+        for (const candidate of candidates) {
+          const fromEnv = process.env[candidate.ref]
+          if (fromEnv && String(fromEnv).trim()) {
+            ref = candidate.ref
+            auth = candidate.auth
+            secret = String(fromEnv).trim()
+            break
+          }
         }
       }
       if (!secret) return { ...row, status: 'no-key', keyRef: ref }
@@ -350,6 +387,7 @@ export function apply(ctx, config) {
     inflight = (async () => {
       try {
         const next = await collect(base)
+        recordDiagnostics(next)
         cache = next
         cacheAt = Date.now()
         return next
