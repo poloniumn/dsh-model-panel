@@ -41,7 +41,8 @@
 
 - **Provider tree**: drawn in the model directory's own order, with collapse state remembered in localStorage (`dsh-model-panel.collapsed`). When every group declares a numeric rank (`order` / `seq` / `index` / `position` / `rank`) that rank is honoured; a partial rank list is ignored so the list is never half-reshuffled.
 - **Third-party channels sink to the bottom**: a provider fed by a third-party channel is always drawn after the plain ones.
-- **Instant search**: `Enter` picks the first match, arrow keys move the highlight.
+- **Focus on open**: each time the panel opens only the provider holding the current model stays expanded, the rest fold away, and the selected model row is highlighted with a brand-colour gradient.
+- **Discount multiplier**: while a low-price window is active the provider header turns soft green and the model name gains a multiplier chip — DeepSeek off-peak `0.5x`, Qwen Token Plan `0.4x` from 22:00 to 08:00 Beijing time, MiMo Token Plan `0.8x` from 00:00 to 08:00.
 - **Per-model thinking toggle & effort slider**: one line with a fixed-width level name, the slider, and a reset slot that keeps the slider the same length with or without the button.
 - **Live balance & plan rows** in each provider's header.
 - **Channel credits side by side**, merged by channel name.

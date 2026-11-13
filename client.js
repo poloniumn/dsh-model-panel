@@ -354,12 +354,54 @@ window.__ModuleLoader__.load({
       return (schedule.windows || []).some((win) => inWindow(minutes, win.startMinute, win.endMinute));
     }
 
-    /** DeepSeek off-peak = half price: the whole provider box gets a green wash. */
-    function discountActive(now, row) {
-      if (!row) return false;
+    /** Rows that carry a night window: {startMinute, endMinute} in Beijing time. */
+    function windowRange(row) {
+      const win = row && row.nightWindow;
+      if (!win) return null;
+      const startMinute = Number(win.startHour) * 60 + Number(win.startMinute || 0);
+      const endMinute = Number(win.endHour) * 60 + Number(win.endMinute || 0);
+      if (!Number.isFinite(startMinute) || !Number.isFinite(endMinute) || startMinute === endMinute) return null;
+      return { startMinute, endMinute };
+    }
+
+    function windowLabel(win) {
+      const pad = (n) => String(n).padStart(2, '0');
+      const from = pad(Math.floor(win.startMinute / 60)) + ':' + pad(win.startMinute % 60);
+      const to = pad(Math.floor(win.endMinute / 60)) + ':' + pad(win.endMinute % 60);
+      return from + '-' + to;
+    }
+
+    /**
+     * Price multiplier in effect right now — DeepSeek off-peak is 0.5x, the
+     * token plans discount inside their night window (0.8x MiMo, 0.4x Qwen).
+     * Returns null when the provider is at full price.
+     */
+    function discountState(now, row) {
+      if (!row) return null;
       const id = String(row.id || '');
-      if (id !== 'deepseek' && id !== 'deepseek-account') return false;
-      return isPeak(now, row) === false;
+      if (id === 'deepseek' || id === 'deepseek-account') {
+        return isPeak(now, row) === false ? { rate: '0.5', note: '', models: [] } : null;
+      }
+      const win = windowRange(row);
+      if (!win) return null;
+      if (!inWindow(beijingMinutes(now), win.startMinute, win.endMinute)) return null;
+      // rows listing explicit models only discount those models
+      let discount = NaN;
+      let models = [];
+      if (Array.isArray(row.nightBadges) && row.nightBadges.length) {
+        const badge = row.nightBadges[0] || {};
+        discount = Number(badge.discount);
+        if (Array.isArray(badge.models)) models = badge.models.map((x) => String(x));
+      }
+      if (!Number.isFinite(discount) || discount <= 0) discount = 8;
+      const rate = discount >= 10 ? discount / 100 : discount / 10;
+      return { rate: String(Math.round(rate * 100) / 100), note: windowLabel(win), models };
+    }
+
+    function discountTitle(t, disc) {
+      if (!disc) return undefined;
+      const tail = disc.rate + 'x';
+      return disc.note ? disc.note + ' · ' + tail : tr(t, 'offPeak') + ' · ' + tail;
     }
 
     function matchBalanceRow(rows, group) {
@@ -905,9 +947,25 @@ window.__ModuleLoader__.load({
         ? findModel(groups, state.current.provider, state.current.model)
         : null;
 
+      // Every time the panel opens, only the provider that holds the current
+      // model starts expanded; the rest fold away so the list opens short.
+      const foldIdleGroups = () => {
+        const cur = String((state.current && state.current.provider) || '');
+        const next = {};
+        const list = Array.isArray(state.groups) ? state.groups : [];
+        for (const g of list) {
+          if (!g) continue;
+          const id = String(g.id || '');
+          if (!id) continue;
+          next[id] = id !== cur;
+        }
+        setCollapsed(next);
+      };
+
       const openPanel = () => {
         if (!available) return;
         setError('');
+        if (!open) foldIdleGroups();
         setOpen((v) => !v);
       };
 
@@ -960,7 +1018,7 @@ window.__ModuleLoader__.load({
       const boxes = ordered.map((entry, entryIndex) => {
         const g = entry.g;
         const row = matchBalanceRow(balanceRows, g);
-        const discount = discountActive(now, row);
+        const discount = discountState(now, row);
         const credit = thirdByEntry.get(entry) || null;
 
         let info = null;
@@ -1005,6 +1063,8 @@ window.__ModuleLoader__.load({
             const off = offLevelOf(r);
             const steps = stepsOf(r, off && off.id);
             const isCur = isCurrent(g, m);
+            const models = discount && Array.isArray(discount.models) ? discount.models : [];
+            const rowDiscount = discount && (!models.length || models.indexOf(String(m.id)) >= 0) ? discount : null;
             const raw = rawEffort({ state, key, isCurrent: isCur, model: m, efforts, offKeys, offId: off && off.id, steps });
             const isOff = Boolean(off && raw === off.id);
             const nameText = m.name || m.id;
@@ -1044,7 +1104,14 @@ window.__ModuleLoader__.load({
                     }
                   },
                 },
-                nameNode,
+                h(
+                  'span',
+                  { className: 'dshmp-namewrap' },
+                  nameNode,
+                  rowDiscount
+                    ? h('span', { className: 'dshmp-mult', title: discountTitle(t, rowDiscount) }, rowDiscount.rate + 'x')
+                    : null
+                ),
                 h(
                   'span',
                   { className: 'dshmp-cell' },
@@ -1081,7 +1148,7 @@ window.__ModuleLoader__.load({
           {
             key: 'g:' + (g.id || entryIndex),
             className: 'dshmp-pgroup' + (discount ? ' discount' : ''),
-            title: discount ? tr(t, 'offPeak') : undefined,
+            title: discountTitle(t, discount),
           },
           h(
             'div',
@@ -1720,9 +1787,13 @@ window.__ModuleLoader__.load({
 .dshmp-row.last{border-radius:0 0 10px 10px;}
 .dshmp-row:hover{background:var(--dsw-alias-bg-layer-1,#f5f5f5);}
 .dshmp-row:focus-visible{outline:2px solid var(--dsw-alias-brand-primary,#4a7cff);outline-offset:-2px;}
-.dshmp-row.current{background:color-mix(in srgb,var(--dsw-alias-brand-primary,#4a7cff) 11%,transparent);border-left-color:var(--dsw-alias-brand-primary,#4a7cff);}
+.dshmp-row.current{background:linear-gradient(90deg,color-mix(in srgb,var(--dsw-alias-brand-primary,#4a7cff) 18%,transparent),color-mix(in srgb,var(--dsw-alias-brand-primary,#4a7cff) 6%,transparent));border-left-color:var(--dsw-alias-brand-primary,#4a7cff);border-left-width:3px;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--dsw-alias-brand-primary,#4a7cff) 16%,transparent);}
+.dshmp-row.current .dshmp-name{font-weight:600;color:var(--dsw-alias-brand-primary,#4a7cff);}
+.dshmp-row.current:hover{background:color-mix(in srgb,var(--dsw-alias-brand-primary,#4a7cff) 20%,transparent);}
 .dshmp-row.busy{opacity:.5;pointer-events:none;}
-.dshmp-name{display:block;min-width:0;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dshmp-namewrap{display:flex;align-items:center;gap:6px;min-width:0;}
+.dshmp-name{display:block;flex:1 1 auto;min-width:0;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dshmp-mult{flex:none;padding:0 5px;border-radius:5px;font-size:10.5px;font-weight:700;line-height:15px;letter-spacing:.2px;color:#15803d;background:color-mix(in srgb,#22c55e 15%,transparent);border:1px solid color-mix(in srgb,#22c55e 40%,transparent);font-variant-numeric:tabular-nums;}
 .dshmp-cell{display:flex;justify-content:center;align-items:center;min-width:0;}
 .dshmp-cell-effort{align-items:center;}
 .dshmp-dash{color:var(--dsw-alias-label-tertiary,#999);text-align:center;}

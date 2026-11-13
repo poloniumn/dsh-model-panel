@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.0 — 2026-11-13
+
+### Added
+
+- **Discount multiplier chips / 折扣倍率标记.** When a low-price window is live,
+  the provider header turns soft green (same affordance DeepSeek already had) and
+  the model name carries a small chip with the price multiplier:
+  DeepSeek off-peak `0.5x`, Qwen Token Plan `0.4x` during 22:00–08:00 Beijing
+  time, MiMo / xiaomi Token Plan `0.8x` during 00:00–08:00. Providers whose
+  schedule lists explicit models only badge those models.
+
+### Changed
+
+- **Panel opens focused.** Every provider is folded when the panel opens except
+  the one that owns the current model, and that provider is forced open even if
+  it was collapsed before. Fold state from this pass is not written to
+  localStorage, so a manual expand is never silently persisted over.
+- **Current model is unmistakable.** The selected row uses a brand-colour
+  gradient, a 3 px accent bar and a bolder brand-coloured name instead of the
+  faint 11 % tint it used before.
+
 ## 0.3.0 — 2026-11-12
 
 ### Added
