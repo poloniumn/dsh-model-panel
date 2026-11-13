@@ -149,6 +149,15 @@ window.__ModuleLoader__.load({
       }
     }
 
+    /** True when the key was ever written — distinguishes "[]" from "never set". */
+    function hasLS(key) {
+      try {
+        return window.localStorage.getItem(key) !== null;
+      } catch (e) {
+        return false;
+      }
+    }
+
     function loadObject(key) {
       const value = loadLS(key, {});
       return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -947,25 +956,43 @@ window.__ModuleLoader__.load({
         ? findModel(groups, state.current.provider, state.current.model)
         : null;
 
-      // Every time the panel opens, only the provider that holds the current
-      // model starts expanded; the rest fold away so the list opens short.
-      const foldIdleGroups = () => {
+      // Every fold change is persisted, so this only fires when there is no
+      // memory yet (first run, cleared storage): the panel seeds itself with
+      // everything folded except the provider that owns the current model.
+      const seededRef = useRef(false);
+      useEffect(() => {
+        if (seededRef.current) return;
+        const list = Array.isArray(state.groups) ? state.groups : [];
+        if (!list.length) return;
+        seededRef.current = true;
+        if (hasLS(K_COLLAPSED)) return;
         const cur = String((state.current && state.current.provider) || '');
         const next = {};
-        const list = Array.isArray(state.groups) ? state.groups : [];
         for (const g of list) {
-          if (!g) continue;
-          const id = String(g.id || '');
-          if (!id) continue;
-          next[id] = id !== cur;
+          const id = String((g && g.id) || '');
+          if (id && id !== cur) next[id] = true;
         }
+        saveLS(K_COLLAPSED, Object.keys(next));
         setCollapsed(next);
-      };
+      }, [state.groups, state.current]);
+
+      // Opening the panel re-opens the provider that holds the current model;
+      // every other provider keeps whatever the user last chose.
+      const revealCurrent = useCallback(() => {
+        setCollapsed((prev) => {
+          const cur = String((state.current && state.current.provider) || '');
+          if (!cur || !prev[cur]) return prev;
+          const next = Object.assign({}, prev);
+          delete next[cur];
+          saveLS(K_COLLAPSED, Object.keys(next));
+          return next;
+        });
+      }, [state]);
 
       const openPanel = () => {
         if (!available) return;
         setError('');
-        if (!open) foldIdleGroups();
+        if (!open) revealCurrent();
         setOpen((v) => !v);
       };
 

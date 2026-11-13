@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.1 — 2026-11-13
+
+### Fixed
+
+- **Fold memory is real again.** 0.4.0 rewrote the fold set on every open, which
+  made the persisted choice dead data. The focused seed now runs once — only
+  when no fold state exists yet — and opening the panel merely re-opens the
+  provider that owns the current model. Everything else keeps the state the user
+  last set, and every fold change is written to
+  `dsh-model-panel.collapsed` as before.
+
 ## 0.4.0 — 2026-11-13
 
 ### Added
