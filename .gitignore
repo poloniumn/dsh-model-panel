@@ -10,3 +10,7 @@ dist/
 .gitpub-secrets/
 *token*.txt
 *.secrets
+test/.tmp-cache*/
+.gate-test-*/
+.qwencheck.mjs
+.smoke.mjs
