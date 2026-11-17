@@ -120,7 +120,7 @@ ok('a seeded answer is flagged stale', /return Promise\.resolve\(\{ ...seed\.sta
 ok('an in-flight refresh wins over the seed', /if \(inflight\) return inflight[\s\S]*const seed = cache/.test(hostSrc))
 ok('concurrent third-party fetch', /Promise\.all\(\[\s*\n?\s*fetchThirdParty\(base\),\s*\n?\s*ofmCredits\.readAll\(\)/.test(hostSrc))
 ok('merges third-party rows by name', /const seen = new Set\(connected\.map/.test(hostSrc))
-ok('returns thirdParty', /return \{ ok: true, updatedAt: Date\.now\(\), rows: visible, thirdParty \}/.test(hostSrc))
+ok('returns thirdParty', /return \{ ok: true, updatedAt: Date\.now\(\), rows: visible, thirdParty, degraded: !reachable \}/.test(hostSrc))
 ok('no other plugin endpoint is referenced', !indexSrc.includes('/dsh-balance'))
 
 // ----------------------------------------------------------- browser half
@@ -128,10 +128,10 @@ console.log('\n[client.js wiring]')
 ok('one endpoint, served by this plugin', clientSrc.includes("const STATE_ENDPOINT = '/dsh-model-panel/state.json'"))
 ok('no balance-display endpoint', !clientSrc.includes('/dsh-balance'))
 ok('fetchState reads rows + thirdParty', /thirdParty: Array\.isArray\(data\.thirdParty\) \? data\.thirdParty : \[\]/.test(clientSrc))
-ok('balance cache keeps thirdParty', /thirdParty: data\.thirdParty,/.test(clientSrc))
-ok('a stale answer is not cached', /at: data\.stale \? 0 : Date\.now\(\),/.test(clientSrc))
+ok('balance cache keeps thirdParty', /balanceCache = \{ at: Date\.now\(\), rows: data\.rows, thirdParty: data\.thirdParty \}/.test(clientSrc))
+ok('a stale answer is not cached', /if \(!retry\) \{\s*\n\s*balanceCache = \{ at: Date\.now\(\), rows: data\.rows, thirdParty: data\.thirdParty \}/.test(clientSrc))
 ok('the panel seeds itself from the last answer once', /seedRef\.current === null\) seedRef\.current = savedBalance\(\) \|\| \{ rows: null, thirdParty: \[\] \};/.test(clientSrc))
-ok('stale answers are re-asked once', /if \(data\.stale && again === null\)/.test(clientSrc))
+ok('provisional answers are re-asked', /if \(provisional && again === null && tries < 5\)/.test(clientSrc))
 ok('the re-ask is cancelled on close', /if \(again\) clearTimeout\(again\);/.test(clientSrc))
 ok('thirdParty state is declared', /const \[thirdParty, setThirdParty\] = useState\(/.test(clientSrc))
 ok('loadBalance sets both', /setBalanceRows\(data\.rows\);\s*\n\s*setThirdParty\(data\.thirdParty \|\| \[\]\)/.test(clientSrc))
@@ -762,6 +762,49 @@ gate.setEnabled('root', true)
 eq('the switch turns back on', gate.state('root').enabled, true)
 eq('the gate reopens', gate.guard({ name: 'subagent', agent: { session: { header: { id: 'root' } } } }), undefined)
 fs.rmSync(gateDir, { recursive: true, force: true })
+
+// ------------------------------------------------- cold credential store
+// A host mounts this plugin before its credential store finishes loading, and
+// every read then answers "nothing" — indistinguishable from "no key". The
+// sweep must say so, so nothing caches it or overwrites the last good answer.
+console.log('\n[cold credential store]')
+const secretsMod = await import(url.pathToFileURL(path.join(ROOT, 'lib/secrets.js')).href)
+const colMod = await import(url.pathToFileURL(path.join(ROOT, 'lib/collect.js')).href)
+const snapMod = await import(url.pathToFileURL(path.join(ROOT, 'lib/snapshot.js')).href)
+ok('the store reports whether it is reachable', typeof secretsMod.createSecrets({ getService: () => null }).available === 'function')
+eq('a missing service reads as unreachable', secretsMod.createSecrets({ getService: () => null }).available(), false)
+eq('a live service reads as reachable', secretsMod.createSecrets({ getService: () => ({ resolve: async () => undefined }) }).available(), true)
+ok('the entry wires the probe into collect', indexSrc.includes('storeReady: () => secrets.available()'))
+ok('collect takes the probe', /createCollect\(\{[^}]*storeReady/.test(read('lib/collect.js')) || indexSrc.includes('storeReady: () => secrets.available()'))
+eq('a reachable store yields an unflagged sweep', await colMod.createCollect({ adapters: { all: [], get: () => null }, rows: { buildRow: async (id) => ({ id, status: 'no-key' }), adapterFor: () => null }, get: () => null, schedules: { current: async () => null }, fetchThirdParty: async () => [], ofmCredits: { readAll: async () => [] }, storeReady: () => true }).collect(null).then((s) => s.degraded), false)
+eq('an unreachable store flags the sweep', await colMod.createCollect({ adapters: { all: [], get: () => null }, rows: { buildRow: async (id) => ({ id, status: 'no-key' }), adapterFor: () => null }, get: () => null, schedules: { current: async () => null }, fetchThirdParty: async () => [], ofmCredits: { readAll: async () => [] }, storeReady: () => false }).collect(null).then((s) => s.degraded), true)
+eq('a degraded answer is never cached', snapMod.DEGRADED_TTL_MS, 0)
+const degDir = fs.mkdtempSync(path.join(ROOT, '.gate-test-'))
+let storeUp = false
+let sweeps = 0
+const degSnap = snapMod.createSnapshot({
+  cacheDir: degDir,
+  collect: async () => {
+    sweeps += 1
+    return { ok: true, updatedAt: Date.now(), rows: [{ id: 'xiaomi', kind: 'money', status: storeUp ? 'ok' : 'no-key' }], thirdParty: [], degraded: !storeUp }
+  },
+})
+const deg1 = await degSnap.snapshot(null)
+eq('the first cold sweep is answered', deg1.rows[0].status, 'no-key')
+storeUp = true
+const deg2 = await degSnap.snapshot(null)
+eq('the next request sweeps again instead of reading the cold answer', sweeps, 2)
+eq('the second sweep has the real numbers', deg2.rows[0].status, 'ok')
+eq('a good answer is cached again', (await degSnap.snapshot(null)).rows[0].status, 'ok')
+eq('a cached good answer costs no sweep', sweeps, 2)
+await new Promise((resolve) => setTimeout(resolve, 60))
+const degFile = path.join(degDir, 'last-state.json')
+ok('a degraded sweep writes no diagnostics', fs.existsSync(degFile))
+const goodDiag = JSON.parse(fs.readFileSync(degFile, 'utf8'))
+eq('the diagnostics file holds the good answer', goodDiag.rows[0].status, 'ok')
+fs.writeFileSync(degFile, JSON.stringify({ at: new Date().toISOString(), rows: [{ id: 'xiaomi', status: 'no-key' }], thirdParty: [] }))
+eq('a keyless diagnostics file is not used as a seed', degSnap.readDiagnostics(), null)
+fs.rmSync(degDir, { recursive: true, force: true })
 
 // ------------------------------------------------------- route contracts
 // The four endpoints share one fence and one error wrapper, so the wrapper is

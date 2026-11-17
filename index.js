@@ -163,7 +163,15 @@ export function apply(ctx, config) {
   }
 
   const rows = createRows({ adapters, secrets, get })
-  const collect = createCollect({ adapters, rows, get, schedules, fetchThirdParty, ofmCredits })
+  const { collect } = createCollect({
+    adapters,
+    rows,
+    get,
+    schedules,
+    fetchThirdParty,
+    ofmCredits,
+    storeReady: () => secrets.available(),
+  })
   const { snapshot } = createSnapshot({ cacheDir, collect })
 
   const denied = createFence({ get })

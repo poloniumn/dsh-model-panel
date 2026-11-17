@@ -123,14 +123,18 @@ window.__ModuleLoader__.load({
         kick(load);
         let alive = true;
         let again = null;
-        // The host can answer from its last state while it refreshes; one
-        // more request shortly after brings the new numbers without the user
-        // waiting for the whole provider sweep on an empty card.
+        let tries = 0;
+        // The host can answer from its last state while it refreshes, or from
+        // a sweep that ran before its credential store was up. Either way the
+        // numbers on screen are provisional: ask again shortly, a few times,
+        // instead of letting the user stare at an empty card.
         const apply = (data) => {
           if (!alive) return;
           setBalanceRows(data.rows);
           setThirdParty(data.thirdParty || []);
-          if (data.stale && again === null) {
+          const provisional = Boolean(data.stale || data.degraded);
+          if (provisional && again === null && tries < 5) {
+            tries += 1;
             again = setTimeout(() => {
               again = null;
               loadBalance().then(apply);

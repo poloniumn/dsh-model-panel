@@ -240,6 +240,10 @@ window.__ModuleLoader__.load({
             // The host answered from its own last state while it collects a
             // fresh one; ask again shortly.
             stale: data.stale === true,
+            // The host collected before its credential store was up, so every
+            // provider reads as keyless. Same treatment as stale: retry soon
+            // and never keep this frame.
+            degraded: data.degraded === true,
           };
         })
         .catch(() => null);
@@ -266,14 +270,14 @@ window.__ModuleLoader__.load({
       }
       return fetchState(STATE_ENDPOINT).then((data) => {
         if (data) {
-          // A stale answer must not be cached: the follow-up request in ~700 ms
-          // has to reach the host again, not read this same object back.
-          balanceCache = {
-            at: data.stale ? 0 : Date.now(),
-            rows: data.rows,
-            thirdParty: data.thirdParty,
-          };
-          if (!data.stale) rememberBalance(data.rows, data.thirdParty);
+          const retry = data.stale || data.degraded;
+          // A stale or degraded answer must not be cached: the follow-up
+          // request in ~700 ms has to reach the host again, not read this same
+          // object back — and it must never be kept as the last good balance.
+          if (!retry) {
+            balanceCache = { at: Date.now(), rows: data.rows, thirdParty: data.thirdParty };
+            rememberBalance(data.rows, data.thirdParty);
+          }
           return data;
         }
         return { rows: balanceCache.rows || [], thirdParty: balanceCache.thirdParty || [] };

@@ -4,6 +4,39 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.7.3 — 2026-11-17
+
+### Fixed
+
+- **A restart no longer empties the panel.** Two defects stacked up here. The
+  0.7.0 split assigned `const collect = createCollect({…})` while
+  `lib/collect.js` returns `{ collect, enabledProviders }`, so
+  `lib/snapshot.js` called a plain object and `state.json` answered
+  `500 {"ok":false,"error":"collect is not a function"}`. The factory now
+  destructures again, and `test/run.mjs` pins the shape.
+- **A cold credential store is not a result.** The host mounts this plugin
+  before `credentials` finishes loading, and every read then answers
+  "nothing" — indistinguishable from "no key configured". The first sweep
+  wrote such an all-keyless frame to `last-state.json` and parked it in the
+  60s cache, so the panel kept drawing `no-key` rows long after the keys were
+  readable. `lib/secrets.js` now exposes `available()`; `lib/collect.js`
+  reports `degraded: true` when the store was not up; `lib/snapshot.js`
+  keeps a degraded answer out of the cache (new `DEGRADED_TTL_MS = 0`), out
+  of `last-state.json`, and out of the seed — an old all-keyless file is no
+  longer replayed either.
+- **The browser stops keeping an empty frame.** `client.shared.js` treats
+  `degraded` like `stale`: no `balanceCache` entry, no
+  `rememberBalance()` write, and the panel's open effect retries it
+  (bounded at five attempts) instead of painting once and stopping.
+
+### Tests
+
+- **The cold start is asserted end to end.** A new `[cold credential store]`
+  block runs three sweeps against a temporary cache directory, proves
+  `DEGRADED_TTL_MS === 0`, proves a keyless `last-state.json` is refused as a
+  seed, and checks that `available()` follows the service. A separate
+  process-level run (mount with no `credentials`, then provide it) goes
+  `degraded: true, 0 real rows` → `degraded: false, 1 real row`.
 ## 0.7.2 — 2026-11-17
 
 ### Fixed
