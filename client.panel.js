@@ -27,6 +27,9 @@ window.__ModuleLoader__.load({
     } = require('dsh-model-panel/client.shared.js');
 
 
+    /** Minute identifier: one integer per minute, so repeats compare equal. */
+    const minuteKey = () => Math.floor(Date.now() / 60_000);
+
     function ModelPanel(props) {
       const { available, directory, load, select, locked, t: tRaw, sessionId } = props;
       // The slot kit normally injects `t`; never let a missing translator crash
@@ -60,9 +63,10 @@ window.__ModuleLoader__.load({
       if (seedRef.current === null) seedRef.current = savedBalance() || { rows: null, thirdParty: [] };
       const [balanceRows, setBalanceRows] = useState(seedRef.current.rows);
       const [thirdParty, setThirdParty] = useState(seedRef.current.thirdParty);
-      // Peak/night badges are time-derived. A one-minute tick keeps them honest
-      // without allocating a Date on every render pass.
-      const [nowKey, setNowKey] = useState(() => Date.now());
+      // Peak/night badges are time-derived. A one-minute tick keeps them honest,
+      // and the state holds the minute itself, so a second tick inside the same
+      // minute is a no-op instead of a fresh render.
+      const [nowKey, setNowKey] = useState(minuteKey);
       // Group ids already known to be channel-fed. A credit lookup that fails on
       // a later poll must not move a provider back up the list.
       const thirdSeen = useRef(new Set());
@@ -149,10 +153,12 @@ window.__ModuleLoader__.load({
             if (alive) setSubagentOn(value);
           });
         }
-        // Peak / night-discount badges are clock-derived; ticking once a minute
-        // while the menu is open is enough to keep them correct.
-        const tick = setInterval(() => setNowKey(Date.now()), 60_000);
-        const onTick = () => setNowKey(Date.now());
+        // Peak / night-discount badges are clock-derived, so the clock lives in
+        // state and the badges are recomputed only when the minute really moves.
+        // Settling on the minute keeps a repeated tick (and a window focus)
+        // from re-rendering the open panel when nothing on screen changed.
+        const tick = setInterval(() => setNowKey(minuteKey()), 60_000);
+        const onTick = () => setNowKey(minuteKey());
         window.addEventListener('focus', onTick);
         const onResize = () => updatePos();
         const onScroll = () => updatePos();
@@ -341,7 +347,9 @@ window.__ModuleLoader__.load({
 
       // Provider boxes are rebuilt only when their inputs change: the model
       // catalogue, the search term, the fold set, or the third-party credits.
-      const now = useMemo(() => new Date(nowKey), [nowKey]);
+      // `nowKey` is a minute identifier rather than a timestamp, so every frame
+      // inside the same minute rebuilds an equal Date and the memo holds.
+      const now = useMemo(() => new Date(nowKey * 60_000), [nowKey]);
       const layout = useMemo(() => {
         const groups = Array.isArray(state.groups) ? state.groups : [];
         const needle = query.trim().toLowerCase();

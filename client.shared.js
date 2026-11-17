@@ -13,7 +13,7 @@ window.__ModuleLoader__.load({
 
     const React = require('react');
     const h = React.createElement;
-    const { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore, Fragment } = React;
+    const { useState, useEffect, useRef } = React;
 
     const NS = 'model-panel';
     const SLOT = 'conversation.input.model';
@@ -993,7 +993,12 @@ window.__ModuleLoader__.load({
       );
     }
     return {
-      NS, SLOT, PRIORITY, K_EFFORTS, K_OFF, K_COLLAPSED, K_LAST_BALANCE, BALANCE_MAX_AGE_MS, STATE_ENDPOINT, SETTINGS_ENDPOINT, SECRET_ENDPOINT, LOGIN_ENDPOINT, SUBAGENT_ENDPOINT, zh, en, tr, loadLS, saveLS, hasLS, loadObject, loadStringArray, fetchState, savedBalance, rememberBalance, loadBalance, kick, requestJson, sessionQuery, loadSubagent, setSubagent, money, compact, pctText, ofmLabel, creditLabel, foldKey, creditFor, groupRank, orderGroups, toDate, beijingMinutes, beijingWeekday, inWindow, isPeak, scheduleLabel, windowRange, windowLabel, normModelKey, nightState, badgeRate, badgeWindow, badgeFor, modelDiscount, groupHasDiscount, modelDiscountTitle, windowBars, matchBalanceRow, reasoningOf, offLevelOf, stepsOf, defaultNonOff, findModel, rawEffort, effortNameOf, triggerText, errorText, ThinkingToggle, EffortSlider,
+      NS, SLOT, PRIORITY, K_EFFORTS, K_OFF, K_COLLAPSED, STATE_ENDPOINT, SETTINGS_ENDPOINT, SECRET_ENDPOINT,
+      LOGIN_ENDPOINT, SUBAGENT_ENDPOINT, zh, en, tr, saveLS, hasLS, loadObject, loadStringArray, fetchState,
+      savedBalance, loadBalance, kick, requestJson, loadSubagent, setSubagent, money, pctText, creditLabel,
+      creditFor, groupRank, orderGroups, normModelKey, nightState, badgeWindow, badgeFor, modelDiscount,
+      groupHasDiscount, modelDiscountTitle, windowBars, matchBalanceRow, reasoningOf, offLevelOf, stepsOf,
+      defaultNonOff, findModel, rawEffort, triggerText, errorText, ThinkingToggle, EffortSlider,
     };
   },
 });

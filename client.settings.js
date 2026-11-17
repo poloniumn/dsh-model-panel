@@ -12,7 +12,7 @@ window.__ModuleLoader__.load({
 
     const React = require('react');
     const h = React.createElement;
-    const { useState, useEffect, useRef, useCallback, Fragment } = React;
+    const { useState, useEffect, useCallback } = React;
 
     const { SETTINGS_ENDPOINT, SECRET_ENDPOINT, LOGIN_ENDPOINT, zh, en, tr, requestJson, money, pctText, errorText } =
       require('dsh-model-panel/client.shared.js');

@@ -29,7 +29,6 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { loopbackBase, sendEmpty, sendJson } from './lib/http.js'
 import { createSchedules } from './lib/schedules.js'
 import { createSecrets } from './lib/secrets.js'
 import { createCookieSetup } from './lib/cookie-setup.js'
@@ -175,7 +174,7 @@ export function apply(ctx, config) {
   const { snapshot } = createSnapshot({ cacheDir, collect })
 
   const denied = createFence({ get })
-  const routes = createRoutes({ snapshot, cookieSetup, denied })
+  const routes = createRoutes({ snapshot, cookieSetup })
 
   // Delegation is the host's business, but the switch sits in this panel: the
   // gate keeps its own file so it needs no session event the host must accept.
