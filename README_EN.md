@@ -12,7 +12,7 @@
 [![dsh-plugin](https://img.shields.io/badge/dsh--plugin-topic-0f172a?style=flat-square&logo=github)](https://github.com/topics/dsh-plugin)
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)](./LICENSE)
 [![npm](https://img.shields.io/npm/v/dsh-model-panel?style=flat-square&color=cb3837&logo=npm)](https://www.npmjs.com/package/dsh-model-panel)
-[![Version](https://img.shields.io/badge/version-0.7.2-38bdf8?style=flat-square)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.7.4-38bdf8?style=flat-square)](./package.json)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek%20Harness-Web%20Plugin-6366f1?style=flat-square)](https://github.com/topics/dsh-plugin)
 
 **An elegant model panel** — it replaces the composer's model seat with a searchable provider / model table.
@@ -25,17 +25,19 @@
 
 ![Model panel main view](images/panel-overview.png)
 
-**The table panel** — search box · provider tree · balance / plan / channel credits · per-model thinking toggle and effort slider
+**The table panel** — search box · provider tree · per-model discount chips (`0.5x` / `0.4x`) · balance / plan / channel credits · thinking toggle and effort slider · the subagent switch
 
 </div>
 
 | UI element | What it does |
 | --- | --- |
 | Search box | Filters providers and models live; Enter picks the first match |
-| Provider header | Balance (¥9.75), plan progress (2%), channel credits and model count on one line |
+| Provider header | Balance (`¥0.11`), plan progress (`96%`), and the OpenDesign wallet at `$1.00` with its 5-hour / Weekly windows on one line |
 | Model row | Thinking toggle + effort slider (High etc.) + one-click reset |
+| Discount chip | Drawn on model rows only (`0.5x` / `0.4x`); outside the window the row stays unmarked, and the header only turns green without a number |
+| Last row | The per-session 启用子任务 switch; off means `subagent` / `subagent_oar` refuse in this session |
 
-> 📷 Screenshots live in `images/`, named `<scene>-<view>.png` — one light theme, one dark.
+> 📷 Screenshots live in `images/`; the main view is `panel-overview.png`. When both a light and a dark shot are kept, name them `<scene>-<view>.png`.
 
 ## Features
 

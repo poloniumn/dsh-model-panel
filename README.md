@@ -12,7 +12,7 @@
 [![dsh-plugin](https://img.shields.io/badge/dsh--plugin-topic-0f172a?style=flat-square&logo=github)](https://github.com/topics/dsh-plugin)
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)](./LICENSE)
 [![npm](https://img.shields.io/npm/v/dsh-model-panel?style=flat-square&color=cb3837&logo=npm)](https://www.npmjs.com/package/dsh-model-panel)
-[![Version](https://img.shields.io/badge/version-0.7.2-38bdf8?style=flat-square)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.7.4-38bdf8?style=flat-square)](./package.json)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek%20Harness-Web%20Plugin-6366f1?style=flat-square)](https://github.com/topics/dsh-plugin)
 
 **优雅的模型选择面板** —— 把输入框的模型选择位，换成一张可搜索的服务商 / 模型表格。
@@ -25,17 +25,19 @@
 
 ![模型面板主界面](images/panel-overview.png)
 
-**表格面板主界面** — 搜索框 · 服务商分组树 · 余额/套餐/渠道积分 · 逐模型思考开关与力度滑条
+**表格面板主界面** — 搜索框 · 服务商分组树 · 逐模型折扣倍率（`0.5x` / `0.4x`）· 余额 / 套餐 / 渠道积分 · 思考开关与力度滑条 · 启用子任务开关
 
 </div>
 
 | 界面元素 | 说明 |
 | --- | --- |
 | 顶部搜索框 | 实时过滤服务商与模型，Enter 选中首项 |
-| 服务商表头 | 余额（¥9.75）、套餐进度（2%）、渠道积分与模型数同屏 |
+| 服务商表头 | 余额（`¥0.11`）、套餐进度（`96%`）、OpenDesign 的 `$1.00` 与 5-hour / Weekly 双窗口同屏 |
 | 模型行 | 思考开关 + 思考强度滑条（High 等档位）+ 一键重置 |
+| 折扣倍率 chip | 只标在模型行（`0.5x` / `0.4x`），不在低价时段内则该行不显示；表头只变浅绿、不写倍率 |
+| 面板末行 | 本会话「启用子任务」开关，关掉即拒绝 `subagent` / `subagent_oar` |
 
-> 📷 截图统一放在 `images/` 目录，命名 `<场景>-<视图>.png`，浅色与深色主题各存一张。
+> 📷 截图统一放在 `images/` 目录，主界面为 `panel-overview.png`；需要浅色 / 深色各存一张时按 `<场景>-<视图>.png` 命名。
 
 ## 功能特性
 

@@ -4,6 +4,62 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.7.4 — 2026-11-18
+
+### Changed
+
+- **The panel no longer re-renders on every tick.** The badge clock is a minute
+  identifier (`Math.floor(Date.now() / 60_000)`) instead of a raw timestamp, so
+  the minute tick and a window focus inside the same minute compare equal and
+  React bails out. The badge `Date` is rebuilt from that identifier, so the
+  memo holds for the whole minute.
+- **Dead exports are gone.** 24 host helpers lost their `export` keyword: each
+  is only called by the file that defines it, and nothing outside `lib` ever
+  imported them.
+- **The shared client chunk exports only what its siblings consume.** 18
+  helpers no other chunk imports are now private to `client.shared.js`; their
+  bodies are unchanged and the shared maths still uses them internally.
+- **The entry point no longer imports the HTTP helpers.** `loopbackBase`,
+  `sendJson` and `sendEmpty` are used by `lib/routes.js` alone; the unused
+  import and the unused `PANEL` chunk constant were removed.
+- **`createRoutes` is called with the arguments it declares.** The extra
+  `denied` argument was never destructured; the fence is still built by
+  `createFence` inside the route module.
+- **`parseBalanceInfos` is one helper.** DeepSeek and Xiaomi MIMO asked the
+  same `{balance_infos:[…]}` question with a different amount-field priority;
+  both now call `util.js` with their own preference and keep their exact output
+  shape, including DeepSeek's top-up note.
+- **React destructuring matches what each chunk uses.** `client.shared.js` no
+  longer pulls `useCallback` / `useMemo` / `useSyncExternalStore` / `Fragment`;
+  `client.settings.js` no longer pulls `useRef` / `Fragment`.
+- **The published tarball ships no tests.** `test/` left the `files` whitelist:
+  it still runs in CI from the repository and is not needed at install time.
+- `README.md` / `README_EN.md`: the version badge says 0.7.4.
+
+- **The showcase screenshot is the real panel again.** `images/panel-overview.png`
+  was a 0.6-era shot with no discount chips, no plan progress and no subagent
+  row. It now shows a live session: per-model `0.5x` / `0.4x` chips, a Qwen
+  Token Plan at 96 %, the OpenDesign USD wallet with both windows, and the
+  启用子任务 switch. Both READMEs follow it: the caption names the discount
+  and switch rows, the UI table quotes the numbers actually on screen instead
+  of the stale `¥9.75` / `2 %`, and the screenshot note no longer claims
+  two themes are on disk when only the dark main view is.
+
+### Fixed
+
+- Both READMEs still carried a 0.7.2 version badge after the 0.7.3 release.
+
+### Verified, left alone on purpose
+
+- The host keeps its 60 s cache with in-flight de-duplication and its disk seed
+  (`CACHE_TTL_MS` / `STALE_TTL_MS` / `DEGRADED_TTL_MS`), and the sweep already
+  runs its independent reads concurrently — no serial hot path to flatten.
+- `lib/util.js#getJson` (Bearer, one retry) and `lib/upstream.js#requestJson`
+  (five auth modes, redirect refusal, 1 MiB cap) stay separate: merging them
+  would touch eight files and lose semantics for no measurable gain.
+- Every chunk unregisters its timers and listeners on teardown; the settings
+  tab polls only while a login is pending.
+
 ## 0.7.3 — 2026-11-17
 
 ### Fixed
