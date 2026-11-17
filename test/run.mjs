@@ -888,6 +888,26 @@ ok('the seed is read from storage once', panelSrc.includes('if (seedRef.current 
 ok('the badges refresh on a minute tick', panelSrc.includes('setInterval(() => setNowKey(Date.now()), 60_000)'))
 ok('the ticker is cleared on close', panelSrc.includes('clearInterval(tick)'))
 ok('useMemo is imported from react', /const \{[^}]*useMemo[^}]*\} = React/.test(clientSrc))
+// A chunk that calls a hook it never pulled off React throws a bare
+// ReferenceError inside render — the whole seat disappears instead of the
+// dropdown. node --check cannot see it, so the surface is scanned here.
+const HOOK_NAME = /use[A-Z][A-Za-z0-9]*/g
+const CHUNK_EXPORTS = (() => {
+  const src = read('client.shared.js')
+  const at = src.lastIndexOf('return {')
+  const body = src.slice(at, src.indexOf('};', at))
+  return new Set(body.replace('return {', '').split(',').map((s) => s.trim()).filter(Boolean))
+})()
+for (const name of [...CHUNK_NAMES, 'client.js']) {
+  const src = read(name)
+  const pulled = (src.match(/const \{([^}]*)\} = React/) || [, ''])[1].split(',').map((s) => s.trim())
+  const used = new Set((src.match(HOOK_NAME) || []).filter((h) => !/^useState|useEffect|useRef|useCallback|useMemo|useSyncExternalStore|useContext|useReducer|useLayoutEffect|useTransition|useDeferredValue|useId|useImperativeHandle|useDebugValue|useOptimistic|useFormStatus|useActionState/.test(h) ? false : true))
+  const undefinedHooks = [...used].filter((h) => !pulled.includes(h))
+  ok('no undefined react hook in ' + name, undefinedHooks.length === 0, undefinedHooks.join(','))
+  const sharedImports = (src.match(/const \{([^}]*)\} = require\('dsh-model-panel\/client\.shared\.js'\)/) || [, ''])[1].split(',').map((s) => s.trim()).filter(Boolean)
+  const orphaned = sharedImports.filter((n) => !CHUNK_EXPORTS.has(n))
+  ok('every shared symbol imported by ' + name + ' exists', orphaned.length === 0, orphaned.join(','))
+}
 // -------------------------------------------------------------- client boot
 // Assemble the real chunk graph in memory: the loader contract is the one
 // thing unit checks cannot see, so every chunk is executed against a stub

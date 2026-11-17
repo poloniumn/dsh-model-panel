@@ -4,6 +4,25 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.7.1 — 2026-11-17
+
+### Fixed
+
+- **The model seat no longer dies at render.** `client.panel.js` reads the
+  session store with `useSyncExternalStore`, but the chunk only pulled
+  `useState/useEffect/useRef/useCallback/useMemo/Fragment` off `React`; the
+  bare `ReferenceError: useSyncExternalStore is not defined` aborted the seat
+  and the host fell back to its own selector. The hook is destructured now,
+  so the dropdown renders again.
+
+### Tests
+
+- **Hooks and chunk imports are checked statically.** Every chunk plus the entry
+  is scanned for `use*` calls and compared with the names destructured from
+  `React`, and every symbol a chunk imports from `client.shared.js` must exist
+  in the shared export table. `node --check` cannot see either failure mode:
+  the first edition of this suite passed 414 assertions while the seat was
+  broken, because a missing hook only fails at render time.
 ## 0.7.0 — 2026-11-17
 
 ### Added

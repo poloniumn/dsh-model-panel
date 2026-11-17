@@ -13,7 +13,7 @@ window.__ModuleLoader__.load({
 
     const React = require('react');
     const h = React.createElement;
-    const { useState, useEffect, useRef, useCallback, useMemo, Fragment } = React;
+    const { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore, Fragment } = React;
 
     let ReactDOM = null;
     try {
