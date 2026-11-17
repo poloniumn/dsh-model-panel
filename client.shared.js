@@ -17,7 +17,6 @@ window.__ModuleLoader__.load({
 
     const NS = 'model-panel';
     const SLOT = 'conversation.input.model';
-    const LABEL_SLOT = 'conversation.input.model.label';
     const PRIORITY = -5;
     const K_EFFORTS = 'dsh-model-panel.efforts';
     const K_OFF = 'dsh-model-panel.off';
@@ -990,7 +989,7 @@ window.__ModuleLoader__.load({
       );
     }
     return {
-      NS, SLOT, LABEL_SLOT, PRIORITY, K_EFFORTS, K_OFF, K_COLLAPSED, K_LAST_BALANCE, BALANCE_MAX_AGE_MS, STATE_ENDPOINT, SETTINGS_ENDPOINT, SECRET_ENDPOINT, LOGIN_ENDPOINT, SUBAGENT_ENDPOINT, zh, en, tr, loadLS, saveLS, hasLS, loadObject, loadStringArray, fetchState, savedBalance, rememberBalance, loadBalance, kick, requestJson, sessionQuery, loadSubagent, setSubagent, money, compact, pctText, ofmLabel, creditLabel, foldKey, creditFor, groupRank, orderGroups, toDate, beijingMinutes, beijingWeekday, inWindow, isPeak, scheduleLabel, windowRange, windowLabel, normModelKey, nightState, badgeRate, badgeWindow, badgeFor, modelDiscount, groupHasDiscount, modelDiscountTitle, windowBars, matchBalanceRow, reasoningOf, offLevelOf, stepsOf, defaultNonOff, findModel, rawEffort, effortNameOf, triggerText, errorText, ThinkingToggle, EffortSlider,
+      NS, SLOT, PRIORITY, K_EFFORTS, K_OFF, K_COLLAPSED, K_LAST_BALANCE, BALANCE_MAX_AGE_MS, STATE_ENDPOINT, SETTINGS_ENDPOINT, SECRET_ENDPOINT, LOGIN_ENDPOINT, SUBAGENT_ENDPOINT, zh, en, tr, loadLS, saveLS, hasLS, loadObject, loadStringArray, fetchState, savedBalance, rememberBalance, loadBalance, kick, requestJson, sessionQuery, loadSubagent, setSubagent, money, compact, pctText, ofmLabel, creditLabel, foldKey, creditFor, groupRank, orderGroups, toDate, beijingMinutes, beijingWeekday, inWindow, isPeak, scheduleLabel, windowRange, windowLabel, normModelKey, nightState, badgeRate, badgeWindow, badgeFor, modelDiscount, groupHasDiscount, modelDiscountTitle, windowBars, matchBalanceRow, reasoningOf, offLevelOf, stepsOf, defaultNonOff, findModel, rawEffort, effortNameOf, triggerText, errorText, ThinkingToggle, EffortSlider,
     };
   },
 });

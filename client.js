@@ -30,11 +30,10 @@ window.__ModuleLoader__.load({
      * outlive the release. Changing this string changes the size of client.js,
      * which changes the revision, which invalidates every chunk URL with it.
      */
-    const CHUNK_REV = '0.7.1';
+    const CHUNK_REV = '0.7.2';
 
     const NS = 'model-panel';
     const SLOT = 'conversation.input.model';
-    const LABEL_SLOT = 'conversation.input.model.label';
     const PRIORITY = -5;
     const STYLE_ID = 'dsh-model-panel-styles';
 
@@ -134,9 +133,6 @@ window.__ModuleLoader__.load({
                 label: 'dsh-model-panel',
                 priority: PRIORITY,
                 locale: NS,
-                children: {
-                  [LABEL_SLOT]: { kind: 'single', scope: 'session', inline: true },
-                },
                 inject: (sessionId) => settings.ownerProps(scope, sessionId),
               },
               settings.SeatBoundary

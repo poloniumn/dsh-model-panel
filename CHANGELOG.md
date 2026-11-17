@@ -4,6 +4,39 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.7.2 — 2026-11-17
+
+### Fixed
+
+- **The seat registers again.** `conversation.input.model` is a `single` slot
+  whose child slots (`conversation.input.model.label` and
+  `conversation.input.model.options`) are declared by the shipped model
+  selector itself (`dsh-client-ui-model-selection` `src/client/index.ts:172-178`).
+  Our entry declared `.label` a second time, so `SlotCore.register` threw
+  `slot "conversation.input.model.label" is already declared` at
+  `dsh-client-ui-slots` `lib/index.js:209-212`; the `try/catch` in the entry
+  logged the failure and gave up, leaving the host's own selector in the cell.
+  Registration no longer requests any child, which is also how priority -5
+  shadows the shipped entry without touching its declarations.
+- **Labels render without the native label slot.** The seat drew the trigger
+  text and every option name through `renderSlot(LABEL_SLOT)`; a registration
+  without that child is refused by `boundRenderSlot`
+  (`dsh-client-ui-renderer` `src/client/scoped-slots.tsx:80-83`, which throws
+  `SlotOwnershipError`), and the call was inside a `try` that silently fell
+  through to plain text. The trigger and the option rows now build their own
+  `<span>`, so the same text appears in every case, without a hidden failure
+  path on each render.
+
+### Tests
+
+- **The boot test now enforces the real declaration rule.** The in-memory slot
+  stub rejects a second declaration of any child key and pre-registers the
+  shipped selector, which is exactly the composition the browser sees. The
+  previous stub accepted anything, so the suite passed while the seat could
+  never register.
+- **The seat is asserted childless.** `the model seat declares no child slots`
+  pins the fix; `our seat registers beside the shipped selector` proves the
+  registration survives the shipped entry's arrival in either order.
 ## 0.7.1 — 2026-11-17
 
 ### Fixed

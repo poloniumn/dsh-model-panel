@@ -949,12 +949,34 @@ eq('the entry exports an apply', typeof plugin.apply, 'function')
 eq('the entry declares its services', plugin.inject, ['slots', 'locale', 'sessions'])
 
 const seats = []
+// A faithful echo of the real SlotCore rules this plugin must live under: a
+// second declaration of one child key throws, and a single slot renders its
+// lowest-priority entry. The shipped selector declares .label/.options as
+// ITS children, so a duplicate declaration here is the 0.7.1 regression.
+const declaredChildren = new Set()
 const slotServices = {
   inject(name, run) { run() },
-  register(definition, component) { seats.push({ definition, component }) },
+  register(definition, component) {
+    for (const childKey of Object.keys(definition.children || {})) {
+      if (declaredChildren.has(childKey)) throw new Error('slot "' + childKey + '" is already declared')
+      declaredChildren.add(childKey)
+    }
+    seats.push({ definition, component })
+  },
 }
+const nativeSelector = { name: 'conversation.input.model', priority: 0, children: {
+  'conversation.input.model.label': { kind: 'single', scope: 'session', inline: true },
+  'conversation.input.model.options': { kind: 'list', scope: 'session' },
+} }
+// The shipped selector is not one of OUR contributions: simulate its arrival
+// (its children become declared) without recording it in `seats`.
+const nativeSeatRow = { definition: nativeSelector, component: function nativeSeat() {} }
+slotServices.register(nativeSelector, nativeSeatRow.component)
+seats.pop()
 const scope = { get: (name) => (name === 'slots' ? slotServices : null) }
 await plugin.apply({ get: () => null, inject: (names, run) => run(scope) })
+eq('the shipped selector holds priority 0', nativeSeatRow.definition.priority, 0)
+eq('our seat registers beside the shipped selector', seats.filter((row) => row.definition.name === 'conversation.input.model').length, 1)
 
 const sharedTable = requireTable.get('dsh-model-panel/client.shared.js')
 eq('the shared chunk answers the dictionary', typeof sharedTable.zh.setTitle, 'string')
@@ -971,7 +993,10 @@ eq('the settings chunk exports the tab', typeof settingsTable.CookieUsageTab, 'f
 eq('both slots are contributed', seats.length, 2)
 const seatRow = seats.find((row) => row.definition.name === 'conversation.input.model')
 eq('the model seat keeps priority -5', seatRow.definition.priority, -5)
-eq('the model seat draws the native label slot', Object.keys(seatRow.definition.children)[0], 'conversation.input.model.label')
+// 0.7.2: the shipped selector declares conversation.input.model.label and
+// .options as ITS children. A second declaration throws 'already declared',
+// so our entry registers the seat alone and renders its own labels.
+ok('the model seat declares no child slots', seatRow.definition.children === undefined)
 eq('a crashed seat degrades to the boundary', seatRow.component, settingsTable.SeatBoundary)
 const settingsRow = seats.find((row) => row.definition.name === 'settings.plugins.tab')
 eq('the settings tab keeps its id', settingsRow.definition.id, 'dsh-model-panel')

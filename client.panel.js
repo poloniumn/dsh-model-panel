@@ -23,12 +23,12 @@ window.__ModuleLoader__.load({
     }
 
     const {
-      EffortSlider, K_COLLAPSED, K_EFFORTS, K_OFF, LABEL_SLOT, ThinkingToggle, creditFor, creditLabel, defaultNonOff, errorText, findModel, groupHasDiscount, hasLS, kick, loadBalance, loadObject, loadStringArray, loadSubagent, matchBalanceRow, modelDiscount, modelDiscountTitle, money, offLevelOf, orderGroups, rawEffort, reasoningOf, saveLS, savedBalance, setSubagent, stepsOf, tr, triggerText, windowBars,
+      EffortSlider, K_COLLAPSED, K_EFFORTS, K_OFF, ThinkingToggle, creditFor, creditLabel, defaultNonOff, errorText, findModel, groupHasDiscount, hasLS, kick, loadBalance, loadObject, loadStringArray, loadSubagent, matchBalanceRow, modelDiscount, modelDiscountTitle, money, offLevelOf, orderGroups, rawEffort, reasoningOf, saveLS, savedBalance, setSubagent, stepsOf, tr, triggerText, windowBars,
     } = require('dsh-model-panel/client.shared.js');
 
 
     function ModelPanel(props) {
-      const { available, directory, load, select, locked, t: tRaw, renderSlot, sessionId } = props;
+      const { available, directory, load, select, locked, t: tRaw, sessionId } = props;
       // The slot kit normally injects `t`; never let a missing translator crash
       // the seat — fall back to the key itself.
       const t = typeof tRaw === 'function' ? tRaw : (key) => String(key);
@@ -428,22 +428,7 @@ window.__ModuleLoader__.load({
         setOpen((v) => !v);
       };
 
-      const triggerLabel = (() => {
-        const text = triggerText(state, t);
-        if (renderSlot && state.current) {
-          try {
-            const node = renderSlot(
-              LABEL_SLOT,
-              { provider: state.current.provider, model: state.current.model, placement: 'trigger', selected: true },
-              { fallback: h('span', null, text) }
-            );
-            if (node) return node;
-          } catch (e) {
-            /* fall through */
-          }
-        }
-        return h('span', null, text);
-      })();
+      const triggerLabel = h('span', null, triggerText(state, t));
 
       const trigger = h(
         'button',
@@ -541,20 +526,7 @@ window.__ModuleLoader__.load({
             const rowDiscount = modelDiscount(now, row, m);
             const raw = rawEffort({ state, key, isCurrent: isCur, model: m, efforts, offKeys, offId: off && off.id, steps });
             const isOff = Boolean(off && raw === off.id);
-            const nameText = m.name || m.id;
-            let nameNode = h('span', { className: 'dshmp-name' }, nameText);
-            if (renderSlot) {
-              try {
-                const node = renderSlot(
-                  LABEL_SLOT,
-                  { provider: g.id, model: m.id, placement: 'option', selected: isCur },
-                  { fallback: nameNode }
-                );
-                if (node) nameNode = node;
-              } catch (e) {
-                /* keep plain name */
-              }
-            }
+            const nameNode = h('span', { className: 'dshmp-name' }, m.name || m.id);
             rows.push(
               h(
                 'div',
@@ -675,7 +647,6 @@ window.__ModuleLoader__.load({
         busy,
         available,
         t,
-        renderSlot,
       ]);
 
       let body;
