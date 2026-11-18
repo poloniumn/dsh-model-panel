@@ -1,7 +1,7 @@
 {
   "name": "dsh-model-panel",
   "version": "0.7.4",
-  "description": "A table-style model panel for the DeepSeek Harness composer: provider tree in model-directory order with third-party channels last, remembered collapse, model search, per-model thinking toggle and effort slider, plus self-hosted balance, plan and channel-credit rows in each provider header.",
+  "description": "Searchable provider/model table in the DSH composer: per-model discount chips, balance and plan rows, per-session subagent switch.",
   "keywords": [
     "dsh",
     "dsh-plugin",

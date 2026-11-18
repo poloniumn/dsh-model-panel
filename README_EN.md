@@ -37,29 +37,16 @@
 | Discount chip | Drawn on model rows only (`0.5x` / `0.4x`); outside the window the row stays unmarked, and the header only turns green without a number |
 | Last row | The per-session 启用子任务 switch; off means `subagent` / `subagent_oar` refuse in this session |
 
-> 📷 Screenshots live in `images/`; the main view is `panel-overview.png`. When both a light and a dark shot are kept, name them `<scene>-<view>.png`.
-
 ## Features
 
-- **Provider tree**: drawn in the model directory's own order, with collapse state remembered in localStorage (`dsh-model-panel.collapsed`). When every group declares a numeric rank (`order` / `seq` / `index` / `position` / `rank`) that rank is honoured; a partial rank list is ignored so the list is never half-reshuffled.
-- **Third-party channels sink to the bottom**: a provider fed by a third-party channel is always drawn after the plain ones.
-- **Focus on open**: with no saved fold state (first run) only the provider holding the current model is expanded and the rest start folded; after that your own expand/collapse choices are remembered, and opening the panel just re-opens the current model's provider. The selected row is highlighted with a brand-colour gradient.
-- **Discount multiplier, matched per model (never per provider)**: while a low-price window is active the provider header turns soft green and shows **no multiplier at all** — one window can hold several different rates, so any single number in the header is wrong. The multiplier is drawn on the model rows only.
-  - Match order: exact catalog id → folded key (lower-cased, separators stripped, 2–4 digit suffix removed) → display name from an older cache → folded prefix (`deepseek-v4.1-flash` vs `deepseek-v4.1-flash-1017`) → whole-group fallback when the group carries no model list. If two conflicting groups both match, nothing is drawn — missing beats wrong.
-  - Each group carries its own window (`22:00 - 08:00` and the like); outside that window the row stays unmarked.
-  - DeepSeek off-peak: `0.5x` (outside the weekday 12:00–14:00 and 18:00–20:00 peak windows).
-  - Qwen Token Plan, 22:00–08:00 Beijing time: `0.4x` for the Qwen3.8 models and `0.5x` for the DeepSeek-V4 ones, with `Auto` in the 0.4 group. A catalog id that differs from the profile id (`DeepSeek-V4.1-Flash` vs `deepseek-v4.1-flash-1017`) still lands in the right group, and a model outside the night promotion — such as `qwen4-max-preview` with its limited-time 2 折 — stays uncoloured.
-  - MiMo Token Plan, 00:00–08:00 daily: `0.8x` for the whole group.
-- **Per-model thinking toggle & effort slider**: one line with a fixed-width level name, the slider, and a reset slot that keeps the slider the same length with or without the button.
-- **Live balance & plan rows** in each provider's header.
-- **Channel credits side by side**, merged by channel name.
-- **A per-session subagent switch, on the last row of the dropdown**: the panel closes with an 启用子任务 row (on by default). Switching it off makes the host's delegation tools (`subagent`, `subagent_oar`) refuse inside this session and every child of it; the decision is keyed by the root session, so a child cannot overrule its parent, and it lives in `subagent-gate.json` in the host cache directory rather than in the session log. The gate is installed through `tools.guard` and fails open — an unreadable store, a missing agent, or any non-delegation tool passes untouched.
-- **Balance settings tab**: `Settings → Plugins → Balance display` is its own page. It stores the credentials that API keys cannot replace:
-  - Qwen Token Plan: the console cookie (flow unchanged).
-  - OpenDesign: a **control key** (`vela_ctrl_…`, required), a workspace id (optional, filled in automatically when the control key is saved) and a console cookie (optional fallback). OpenDesign's runtime key (`sk-amr-…`) can only call models — measured: `/api/v1/wallet/balance` and friends all answer 401, and `/v1/chat/completions` carries no quota header.
-- **Self-read data path**: the browser half requests exactly one endpoint, `GET /dsh-model-panel/state.json`; credentials only ever go to the URL each adapter declares, the route is loopback-only with cross-site checks, cached for 60 s, and never rejects. **The first paint never waits for the network**: the panel draws the previous answer immediately (browser `localStorage` plus the host's `last-state.json`) and, when the host replies `stale: true`, asks again 700 ms later for the fresh numbers — a cold start no longer sits on an empty card for the whole provider sweep.
-
-> ⚠️ The author can only subscribe to a limited set of providers. Balance / usage figures for some of them — console-cookie endpoints in particular — may still be wrong. If you hit a display bug like that, a PR is very welcome, or open an issue with the raw response.
+- **Provider tree**: drawn in the model directory's own order, with third-party-fed providers always last; collapse state is remembered in localStorage (`dsh-model-panel.collapsed`), and with no saved state only the current model's provider starts expanded. The selected row gets a brand-colour gradient.
+- **Live search**: filters providers and models as you type; `Enter` picks the first match and ↑/↓ move the highlight.
+- **Discount chips on model rows only**: inside a low-price window the provider header turns soft green and shows **no number at all** (one window can hold several rates), while the multiplier is drawn per model — catalog id → folded key → display name → folded prefix, and nothing is drawn when two conflicting groups match. DeepSeek off-peak `0.5x` (outside weekday 12:00–14:00 and 18:00–20:00); Qwen Token Plan 22:00–08:00 gives Qwen3.8 models `0.4x` and DeepSeek-V4 models `0.5x`; MiMo Token Plan 00:00–08:00 gives the whole group `0.8x`.
+- **Per-model thinking toggle and effort slider**: one line with a fixed-width level name, the slider and a reset slot.
+- **Balance, plan and channel credits together**: in each provider header's right cluster, channel credits merged by channel name.
+- **A per-session subagent switch on the dropdown's last row**: on by default; switching it off makes the host's `subagent` / `subagent_oar` refuse in this session and every child of it. The decision is keyed by the root session, lives in `subagent-gate.json` in the host cache directory, and the gate fails open.
+- **Balance settings tab**: `Settings → Plugins → Balance display` stores the credentials API keys cannot replace (Qwen / MiMo console cookies, and OpenDesign's `vela_ctrl_…` control key with an optional workspace id and cookie).
+- **Self-read data path**: the browser half requests exactly one endpoint, `GET /dsh-model-panel/state.json`; credentials only go to the URL each adapter declares, the route is loopback-only with cross-site checks, cached 60 s, and never rejects. **The first paint never waits for the network** — the previous answer (`localStorage` plus the host's `last-state.json`) is drawn immediately, and a `stale: true` reply is followed 700 ms later by the fresh numbers.
 
 ## Installation
 
@@ -72,8 +59,6 @@ This package is a DSH Cordis bundle (Web plugin). Either path works:
    ```bash
    npm install dsh-model-panel
    ```
-
-   (Package page: [npmjs.com/package/dsh-model-panel](https://www.npmjs.com/package/dsh-model-panel))
 
 2. Register the bundle in that profile's `package.json`:
 
@@ -113,15 +98,13 @@ This package is a DSH Cordis bundle (Web plugin). Either path works:
 
 Once installed, the composer's original model seat is replaced by the table panel:
 
-- **Search**: type to filter providers and models; `Enter` selects the first match, ↑/↓ moves the highlight.
-- **Collapse / expand**: click a provider header; the state is remembered between sessions.
-- **Thinking toggle**: enable or disable thinking per model (`dsh-model-panel.off`).
-- **Effort slider**: adjust reasoning effort (`dsh-model-panel.efforts`); the reset slot restores the default.
-- **Balance / plan / channel credits** appear in the provider header's right cluster; a channel with no configured account shows a zero balance, and a failed lookup shows a query failure instead of hiding the row.
+- **Usage**: type to filter providers and models; `Enter` selects the first match and ↑/↓ moves the highlight. Clicking a provider header collapses it, the thinking toggle and effort slider act per model (`dsh-model-panel.off` / `.efforts`), and a channel with no configured account shows a zero balance.
 
 ### Balance display (extra credentials)
 
-Some usage only exists behind a logged-in console or behind a control key, and API keys cannot read it, so it gets a page of its own. Every row is the same loop — open it, paste, **Save and test**, and the usage is read back at once (plan name, progress bar, period end). An expired credential says so and asks for a new one; **Clear** removes it from the local credential store.
+Some usage only exists behind a logged-in console or behind a control key, and API keys cannot read it, so it gets a page of its own: open the row, paste, **Save and test**, and the usage is read back at once. An expired credential says so and asks for a new one; **Clear** removes it from the local credential store. OpenDesign's **runtime key** (`sk-amr-…`, the one used for inference) reads no allowance at all — its `/api/v1/wallet/balance` and friends answer 401 — so a control key is stored separately; the row's "Sign in with a browser" button mints one through the CLI device flow (a 6-character code at `open-design.ai/cloud/cli/activate`, 120 s to approve, and the key plus workspace id are written on approval).
+
+Every cookie-based module takes the same paste: the plain `name=value; …` header, or the whole Cookie-Editor *Export As: JSON* text (native array, `{"cookies":[…]}` / `{"data":[…]}` wrapper, Netscape `cookies.txt`, plain `{name: value}` map). Cookies under the provider's own `domain` suffixes win; when none matches, the whole paste is used. Empty, expired and `;`-bearing values are dropped. Credentials go to the local DSH credential store only — never to the plugin config, logs or browser storage.
 
 | Provider | Credential | Required | What it reads |
 | --- | --- | --- | --- |
@@ -130,18 +113,6 @@ Some usage only exists behind a logged-in console or behind a control key, and A
 | OpenDesign | control key `vela_ctrl_…` (the panel can mint one via "Sign in with a browser") | yes | wallet balance in USD, the Coding Plan 5-hour and 7-day windows — read on this row itself, together with the workspace id and cookie beside it |
 | OpenDesign | workspace id | no | omitted, it is discovered from `/api/v1/workspaces/current`; a control key save fills it in |
 | OpenDesign | console cookie | no | fallback authentication when there is no control key |
-
-OpenDesign's **runtime key** (`sk-amr-…`, the one used for inference) cannot read any allowance: `amr-api.open-design.ai/api/v1/wallet/balance`, `billing/summary` and `workspaces/current` all answer 401, and the model endpoint `amr-link.open-design.ai/v1/chat/completions` sends no quota header. A control key is therefore stored separately from the inference key.
-
-**You do not have to hunt for the control key in a web page.** It is minted by the CLI device-authorization flow (`vela login`): the row in the panel has a "Sign in with a browser" button, the plugin asks `amr-api.open-design.ai/api/v1/cli/device-authorizations` for a 6-character code, opens `open-design.ai/cloud/cli/activate`, and polls every 2 seconds while you type the code and approve. The moment it is approved the control key lands in the local credential store and the workspace id is filled in too. The code expires after 120 seconds — "Restart" issues a new one, and closing the page mid-approval is harmless: the next poll still collects the key. Pasting the control key by hand keeps working.
-
-**You do not have to copy cookies by hand, and there is no file to export.** Press *Export As: JSON* in Cookie-Editor and paste the whole JSON straight into the box (a plain `name=value; name2=value2` header still works too). On save it becomes a request header: a native JSON array, a `{"cookies":[…]}` / `{"data":[…]}` wrapper, a Netscape `cookies.txt` (including the `#HttpOnly_` prefix) and a plain `{name: value}` map are all understood.
-
-Cookies whose `domain` sits under the provider's own suffixes are preferred (Qwen: `qianwenai.com` / `aliyun.com` / `aliyuncs.com`; MiMo: `xiaomimimo.com` / `mi.com`; OpenDesign: `open-design.ai`); when none matches, the whole paste is used — a few extra cookies are harmless, an empty header is not. Empty values, expired ones (`expirationDate` in the past and not a session cookie) and values holding `;` or a newline are dropped, and a duplicate name keeps the last occurrence. The save reports how many cookies went in, plus how many were filtered out.
-
-Every cookie-based module follows the same rule: the Qwen Token Plan, the MiMo Token Plan and OpenDesign's fallback console cookie all take one pasted export.
-
-Credentials go to the local DSH credential store only — never to the plugin config, logs or browser storage, and they are never echoed back. A protocol that has not been measured stays off this page.
 
 ## Configuration
 

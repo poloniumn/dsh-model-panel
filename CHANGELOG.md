@@ -44,6 +44,22 @@ All notable changes to this project are documented here. The format follows
   and switch rows, the UI table quotes the numbers actually on screen instead
   of the stale `¥9.75` / `2 %`, and the screenshot note no longer claims
   two themes are on disk when only the dark main view is.
+- **The blurbs are short now.** `package.json`'s description went from 291
+  characters to 130, both `locale` descriptions to one sentence each, and the
+  GitHub repository description to a single line. `README.md` dropped from
+  8,022 characters to 6,023 and `README_EN.md` from 14,263 to 9,915: the
+  eleven feature bullets are seven, each keeping the matching order, the
+  window times and the measured 401s that make the behaviour checkable;
+  the four balance-display paragraphs are two plus the credential table.
+- **The publish pipeline finally passes a token.** `Publish to npm` never had
+  an `env`, so `setup-node`'s `.npmrc` expanded an empty `NODE_AUTH_TOKEN`
+  and every tagged run ended in `E404` against a package nobody had claimed
+  yet. It now reads `secrets.NPM_TOKEN`, and the job verifies that the tag
+  matches `package.json`, runs `npm test` before publishing, and publishes
+  with `--provenance`.
+- **The repository declares its screenshots.** A root `screenshots.json`
+  points marketplaces at `images/panel-overview.png` instead of letting
+  them guess from the README.
 
 ### Fixed
 
