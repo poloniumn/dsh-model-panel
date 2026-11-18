@@ -21,5 +21,15 @@ jobs:
           registry-url: https://registry.npmjs.org
       - name: Install latest npm
         run: npm install -g npm@latest
+      - name: Verify the tag matches package.json
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          node -e "const v = require('./package.json').version; const t = process.env.GITHUB_REF_NAME; if ('v' + v !== t) { console.error('tag ' + t + ' does not match package.json ' + v); process.exit(1); }"
+      - name: Test before publishing
+        run: |
+          npm run check
+          npm test
       - name: Publish to npm
-        run: npm publish --access public
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
