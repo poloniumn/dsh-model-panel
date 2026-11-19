@@ -41,6 +41,8 @@ npm `0.7.4` 已发布 · 已收录 DeepSeek Harness 插件市场 · `dsh plugin 
 | 折扣倍率 chip | 只标在模型行（`0.5x` / `0.4x`），不在低价时段内则该行不显示；表头只变浅绿、不写倍率 |
 | 面板末行 | 本会话「启用子任务」开关，关掉即拒绝 `subagent` / `subagent_oar` |
 
+> **关于各服务商的余额显示**：作者订阅的服务商有限，无法逐一实测每一家的余额与用量接口，部分服务商（尤其是新接入或近期改过接口的）可能出现余额、套餐进度、渠道积分显示不准、缺项甚至完全不显示的情况，这属于正常。发现数字对不上时，欢迎直接提 [Issue](https://github.com/poloniumn/dsh-model-panel/issues) 或 PR —— 附上脱敏后的请求地址与响应字段，通常补齐一两个取值路径就能修好。
+
 ## 功能特性
 
 - **服务商分组树**：按 DSH 模型目录自身顺序排列，第三方渠道供能的服务商永远排在最后；折叠状态记在 localStorage（`dsh-model-panel.collapsed`），没有折叠记忆时只展开当前模型所在的组，当前模型行用品牌色渐变高亮。
@@ -110,7 +112,7 @@ npm `0.7.4` 已发布 · 已收录 DeepSeek Harness 插件市场 · `dsh plugin 
 
 ### 余额显示（额外凭据）
 
-有些用量只存在于已登录的控制台或需要控制键，API 密钥读不到，于是单独开了一页：每一行都是「点开 → 粘贴 → 保存并测试 → 立即回读」，失效会提示重新粘贴，「清除」从本机凭据库删掉。OpenDesign 的运行时密钥（`sk-amr-…`）只能调用模型，它的 `/api/v1/wallet/balance` 等接口全部 401，所以必须单独配控制键；控制键不用去网页找——点那一栏的「浏览器登录」，插件向 `cli/device-authorizations` 申请 6 位码并自动打开 `open-design.ai/cloud/cli/activate`，批准后当场写入凭据库并回填工作区 ID（120 秒过期，可重新发起）。
+有些用量只存在于已登录的控制台或需要控制键，API 密钥读不到，于是单独开了一页：每一行都是「点开 → 粘贴 → 保存并测试 → 立即回读」，失效会提示重新粘贴，「清除」从本机凭据库删掉。页面顶部常驻两段说明——第一段讲怎么粘（推荐装 Cookie-Editor 这类浏览器扩展，在控制台直接「Export As: JSON」整段粘进来，不必手工按 F12 去找 Cookie），第二段讲效果边界：作者订阅的服务商有限，某家的余额、套餐进度或渠道积分显示不准、缺项甚至完全不显示都属于正常，遇到就提 Issue 或 PR。OpenDesign 的运行时密钥（`sk-amr-…`）只能调用模型，它的 `/api/v1/wallet/balance` 等接口全部 401，所以必须单独配控制键；控制键不用去网页找——点那一栏的「浏览器登录」，插件向 `cli/device-authorizations` 申请 6 位码并自动打开 `open-design.ai/cloud/cli/activate`，批准后当场写入凭据库并回填工作区 ID（120 秒过期，可重新发起）。
 
 所有 Cookie 走同一套粘贴口径：直接粘 `name=value; …`，或粘 Cookie-Editor「Export As: JSON」的整段内容（原生数组、`{"cookies":[…]}` / `{"data":[…]}` 包裹、Netscape `cookies.txt`、纯 `{name: value}` 映射都认）。`domain` 落在该服务商域名后缀下的优先，一条都对不上时整段照用；空值、超期与含 `;` / 换行的值会被丢掉。凭据只写入本机 DSH 凭据库，不落插件配置、日志或浏览器存储，也不回显。
 
@@ -118,9 +120,9 @@ npm `0.7.4` 已发布 · 已收录 DeepSeek Harness 插件市场 · `dsh plugin 
 | --- | --- | --- | --- |
 | Qwen Token Plan | 控制台 Cookie：直接粘贴 Cookie 头，或 Cookie-Editor「Export As: JSON」的整段内容 | 是 | 套餐档位、月度用量百分比、周期结束时间 |
 | MiMo Token Plan | 同上（粘贴口径完全一致） | 是 | 钱包余额、计划总量 / 本月用量、周期结束时间 |
-| OpenDesign | 控制键 `vela_ctrl_…`（可在面板里点「浏览器登录」自动获取） | 是 | 钱包余额（USD）、Coding Plan 的 5 小时 / 7 天窗口用量 |
-| OpenDesign | 工作区 ID | 否 | 不填则用 `/api/v1/workspaces/current` 自动发现；保存控制键时会自动回填 |
-| OpenDesign | 控制台 Cookie | 否 | 控制键缺失时的备选认证方式 |
+| OpenDesign | 控制键 `vela_ctrl_…`（在设置页点「浏览器登录」自动获取） | 二选一 | 钱包余额（USD）、Coding Plan 的 5 小时 / 7 天窗口用量 |
+| OpenDesign | 工作区 ID | 不用填 | 保存控制键时自动回填（`/api/v1/workspaces/current`）；也可手动指定 |
+| OpenDesign | 控制台 Cookie | 二选一 | 与控制键等效：拿不到控制键时用控制台会话顶替 |
 
 ## 配置说明
 

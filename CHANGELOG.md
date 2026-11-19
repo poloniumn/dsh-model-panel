@@ -77,6 +77,30 @@ All notable changes to this project are documented here. The format follows
   releases page still advertised 0.4.3. The release is cut from that tag with
   these notes, so the sidebar and npm agree.
 
+### Docs
+
+- **Both READMEs now say what was actually verified.** Right under the
+  showcase table there is a short note: the author subscribes to only a
+  handful of providers, so not every vendor's balance and usage API could be
+  tested first-hand; a provider that renders a wrong or missing number is an
+  issue or a pull request away from a fix, and the request URL plus the
+  response fields with secrets masked are usually enough to repair it. The
+  note is written in both languages and links straight to the issue tracker.
+- **The balance page explains itself.** Above the rows it now carries two
+  standing notes: a browser extension such as Cookie-Editor, *Export As: JSON*,
+  pasted whole, is the recommended paste — no F12 cookie hunt, no hand-built header — and a
+  short statement of coverage — the author subscribes to only a handful of
+  providers, so a wrong, partial or missing balance, plan progress or channel
+  credit is normal, and an issue or a pull request with masked response fields is how
+  it gets fixed. The OpenDesign rows now say what they are: the control key and
+  the console cookie are alternatives (either one) and the workspace id fills
+  itself in, so the card no longer reads like three separate credentials.
+- **`CHUNK_REV` moved to `0.7.4.1`.** The chunks changed and the host caches them
+  for a year, so the marker has to move for a browser to fetch the new page.
+- `README.md` / `README_EN.md`: the same two notes in the balance-display section,
+  and the credential table says which of the three OpenDesign values are
+  alternatives rather than a checklist.
+
 ### Fixed
 
 - Both READMEs still carried a 0.7.2 version badge after the 0.7.3 release.

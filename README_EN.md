@@ -41,6 +41,8 @@ npm `0.7.4` is out · listed in the DeepSeek Harness plugin market · `dsh plugi
 | Discount chip | Drawn on model rows only (`0.5x` / `0.4x`); outside the window the row stays unmarked, and the header only turns green without a number |
 | Last row | The per-session 启用子任务 switch; off means `subagent` / `subagent_oar` refuse in this session |
 
+> **A note on per-provider balances**: the author subscribes to only a handful of providers, so not every vendor's balance and usage API could be verified first-hand. Some providers — especially newly added or recently redesigned ones — may show inaccurate, partial or missing balances, plan progress or channel credits, which is normal. If a number looks wrong, an [issue](https://github.com/poloniumn/dsh-model-panel/issues) or a pull request is welcome: the request URL and the response fields with the secrets masked are usually all it takes to fix it.
+
 ## Features
 
 - **Provider tree**: drawn in the model directory's own order, with third-party-fed providers always last; collapse state is remembered in localStorage (`dsh-model-panel.collapsed`), and with no saved state only the current model's provider starts expanded. The selected row gets a brand-colour gradient.
@@ -106,7 +108,7 @@ Once installed, the composer's original model seat is replaced by the table pane
 
 ### Balance display (extra credentials)
 
-Some usage only exists behind a logged-in console or behind a control key, and API keys cannot read it, so it gets a page of its own: open the row, paste, **Save and test**, and the usage is read back at once. An expired credential says so and asks for a new one; **Clear** removes it from the local credential store. OpenDesign's **runtime key** (`sk-amr-…`, the one used for inference) reads no allowance at all — its `/api/v1/wallet/balance` and friends answer 401 — so a control key is stored separately; the row's "Sign in with a browser" button mints one through the CLI device flow (a 6-character code at `open-design.ai/cloud/cli/activate`, 120 s to approve, and the key plus workspace id are written on approval).
+Some usage only exists behind a logged-in console or behind a control key, and API keys cannot read it, so it gets a page of its own: open the row, paste, **Save and test**, and the usage is read back at once. An expired credential says so and asks for a new one; **Clear** removes it from the local credential store. Two notes sit at the top of the page: the first says how to paste (Cookie-Editor, *Export As: JSON*, pasted whole — no need to dig cookies out by hand with F12), the second states the coverage limit — the author subscribes to only a handful of providers, so a vendor rendering a wrong, partial or missing balance, plan progress or channel credit is normal, and an issue or a pull request is the way to get it fixed. OpenDesign's **runtime key** (`sk-amr-…`, the one used for inference) reads no allowance at all — its `/api/v1/wallet/balance` and friends answer 401 — so a control key is stored separately; the row's "Sign in with a browser" button mints one through the CLI device flow (a 6-character code at `open-design.ai/cloud/cli/activate`, 120 s to approve, and the key plus workspace id are written on approval).
 
 Every cookie-based module takes the same paste: the plain `name=value; …` header, or the whole Cookie-Editor *Export As: JSON* text (native array, `{"cookies":[…]}` / `{"data":[…]}` wrapper, Netscape `cookies.txt`, plain `{name: value}` map). Cookies under the provider's own `domain` suffixes win; when none matches, the whole paste is used. Empty, expired and `;`-bearing values are dropped. Credentials go to the local DSH credential store only — never to the plugin config, logs or browser storage.
 
@@ -114,9 +116,9 @@ Every cookie-based module takes the same paste: the plain `name=value; …` head
 | --- | --- | --- | --- |
 | Qwen Token Plan | console cookie: paste the header, or the whole Cookie-Editor *Export As: JSON* text | yes | plan tier, monthly usage percentage, period end |
 | MiMo Token Plan | the same paste, identical wording | yes | wallet balance, plan total and month-to-date usage, period end |
-| OpenDesign | control key `vela_ctrl_…` (the panel can mint one via "Sign in with a browser") | yes | wallet balance in USD, the Coding Plan 5-hour and 7-day windows — read on this row itself, together with the workspace id and cookie beside it |
-| OpenDesign | workspace id | no | omitted, it is discovered from `/api/v1/workspaces/current`; a control key save fills it in |
-| OpenDesign | console cookie | no | fallback authentication when there is no control key |
+| OpenDesign | control key `vela_ctrl_…` (the settings page mints one via "Sign in with a browser") | either one | wallet balance in USD, the Coding Plan 5-hour and 7-day windows — read on this row itself, together with the workspace id beside it |
+| OpenDesign | workspace id | nothing to do | filled in automatically when the control key is saved (`/api/v1/workspaces/current`); can still be set by hand |
+| OpenDesign | console cookie | either one | equivalent to the control key: a console session stands in when no key can be minted |
 
 ## Configuration
 

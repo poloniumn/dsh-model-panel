@@ -98,6 +98,8 @@ window.__ModuleLoader__.load({
 .dshmp-set-head{margin-bottom:14px;}
 .dshmp-set-title{font-size:15px;font-weight:600;margin-bottom:4px;}
 .dshmp-set-sub{font-size:12px;line-height:1.55;color:var(--dsw-alias-label-secondary,#666);max-width:64ch;}
+.dshmp-set-tips{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
+.dshmp-set-tip{margin:0;padding:7px 10px;font-size:11.5px;line-height:1.6;color:var(--dsw-alias-label-secondary,#666);border-left:2px solid color-mix(in srgb,var(--dsw-alias-brand-primary,#4a7cff) 55%,transparent);background:var(--dsw-alias-bg-layer-1,#f5f5f5);border-radius:0 6px 6px 0;}
 .dshmp-set-card{margin-bottom:10px;padding:12px 14px;border:1px solid var(--dsw-alias-border-l1,#e6e6e6);border-radius:10px;background:var(--dsw-alias-bg-base,#fff);}
 .dshmp-set-top{display:flex;align-items:center;gap:10px;}
 .dshmp-set-name{font-size:14px;font-weight:600;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}

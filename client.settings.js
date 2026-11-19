@@ -558,7 +558,15 @@ window.__ModuleLoader__.load({
           'div',
           { className: 'dshmp-set-head' },
           h('div', { className: 'dshmp-set-title' }, t('setTitle')),
-          h('div', { className: 'dshmp-set-sub' }, t('setSubtitle'))
+          h('div', { className: 'dshmp-set-sub' }, t('setSubtitle')),
+          // Two standing notes on the page itself: how to paste an export, and
+          // why some vendors may not render a number at all.
+          h(
+            'div',
+            { className: 'dshmp-set-tips' },
+            h('p', { className: 'dshmp-set-tip' }, t('setTipEditor')),
+            h('p', { className: 'dshmp-set-tip' }, t('setTipCoverage'))
+          )
         ),
         error
           ? h(
