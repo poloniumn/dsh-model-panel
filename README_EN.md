@@ -12,10 +12,14 @@
 [![dsh-plugin](https://img.shields.io/badge/dsh--plugin-topic-0f172a?style=flat-square&logo=github)](https://github.com/topics/dsh-plugin)
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)](./LICENSE)
 [![npm](https://img.shields.io/npm/v/dsh-model-panel?style=flat-square&color=cb3837&logo=npm)](https://www.npmjs.com/package/dsh-model-panel)
+[![npm downloads](https://img.shields.io/npm/dm/dsh-model-panel?style=flat-square&color=cb3837&logo=npm)](https://www.npmjs.com/package/dsh-model-panel)
 [![Version](https://img.shields.io/badge/version-0.7.4-38bdf8?style=flat-square)](./package.json)
+[![listed on dsh-market](https://img.shields.io/badge/market-listed-22c55e?style=flat-square&logo=github)](https://awesome-dsh-plugin.com/p/poloniumn/dsh-model-panel/)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek%20Harness-Web%20Plugin-6366f1?style=flat-square)](https://github.com/topics/dsh-plugin)
 
 **An elegant model panel** — it replaces the composer's model seat with a searchable provider / model table.
+
+npm `0.7.4` is out · listed in the DeepSeek Harness plugin market · `dsh plugin --profile web add dsh-model-panel`
 
 </div>
 
@@ -50,9 +54,29 @@
 
 ## Installation
 
-This package is a DSH Cordis bundle (Web plugin). Either path works:
+Released on npm and listed in the plugin market — pick one:
 
-**Option A — npm (recommended)**
+| Channel | Address |
+| --- | --- |
+| npm | `dsh-model-panel` (latest `0.7.4`) — <https://www.npmjs.com/package/dsh-model-panel> |
+| Market page | <https://awesome-dsh-plugin.com/p/poloniumn/dsh-model-panel/> |
+| Market index | `https://awesome-dsh-plugin.com/index.json` (mirror `https://cdn.jsdelivr.net/npm/dsh-plugin-catalog/index.json`) |
+
+**Option A — plugin market / CLI (recommended)**
+
+1. Search for `dsh-model-panel` on the Harness UI's plugins page, or run:
+
+   ```bash
+   dsh plugin --profile web add dsh-model-panel
+   ```
+
+2. Restart `dsh web`.
+
+The list comes from `awesome-dsh-plugin.com/plugins.json`; `dshmarket` revalidates it on every open, so a merged entry shows up within one nightly cycle (about three hours).
+
+> The official host's Discover page ships no index source. To see this plugin there, add `https://awesome-dsh-plugin.com/index.json` under `Manage index sources → Add`.
+
+**Option B — npm**
 
 1. Inside the web profile directory:
 
@@ -68,31 +92,11 @@ This package is a DSH Cordis bundle (Web plugin). Either path works:
 
 3. Restart the Harness. To upgrade later: `npm update dsh-model-panel`, then restart.
 
-**Option B — Plugin Manager**
+**Option C — Plugin Manager (local directory)**
 
 1. Open `plugin_manager → install_bundle` in the Harness UI.
-2. Set `target` to the absolute path of this repository directory.
+2. Set `target` to the absolute path of this repository directory (or add `"dsh-model-panel": "file:C:/path/to/dsh-model-panel"` to the web profile's `dependencies`).
 3. A first install can activate through HMR; replacing an already installed copy needs a Harness restart to load a fresh JavaScript module generation.
-
-**Option C — Write it into the web profile manually**
-
-1. Add the package to the web profile's `package.json` under `dependencies`:
-
-   ```json
-   "dsh-model-panel": "file:C:/path/to/dsh-model-panel"
-   ```
-
-2. Register the package name in that same `package.json` under `dsh.profile.bundles` — the bundle's own patch is expanded from there, so no hand-written `cordis.patch.yml` entry is needed:
-
-   ```json
-   "dsh": {
-     "profile": {
-       "bundles": ["dsh-model-panel"]
-     }
-   }
-   ```
-
-3. Restart the Harness to activate it.
 
 ## Usage
 

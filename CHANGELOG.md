@@ -61,6 +61,22 @@ All notable changes to this project are documented here. The format follows
   points marketplaces at `images/panel-overview.png` instead of letting
   them guess from the README.
 
+### Released
+
+- **0.7.4 is on npm and in the market.** `dsh-model-panel@0.7.4` was published
+  on 2026-11-18 with npm provenance, and both READMEs now lead with the
+  install line the market shows — `dsh plugin --profile web add
+  dsh-model-panel` — instead of the local `file:` path it used to start with.
+- **The market listing is real, and its delay is documented.** The entry
+  `poloniumn/dsh-model-panel` (category `model`) merged as
+  [awesome-dsh-plugin#16445](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/16445)
+  and reaches the market after the next nightly catalog build; the READMEs
+  state that window and name the index URL, because the official host ships
+  no index source of its own.
+- **The GitHub release matches the package.** `v0.7.4` was only a tag; the
+  releases page still advertised 0.4.3. The release is cut from that tag with
+  these notes, so the sidebar and npm agree.
+
 ### Fixed
 
 - Both READMEs still carried a 0.7.2 version badge after the 0.7.3 release.
