@@ -4,6 +4,31 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.7.7 — 2026-11-20
+
+The 0.7.4 tarball on npm predates everything below; this release ships it.
+
+### Added
+
+- **Ctrl-click a provider name to open its console.** The name is a plain label
+  until Ctrl (⌘ on a Mac) is held, then it turns into a link — colour and
+  underline — and a click opens the dashboard in the system browser. A plain
+  click still folds the group and a click on a row still picks that model.
+
+### Fixed
+
+- **Nine console links were dead or landing on the wrong page** (NanoGPT, ZenMux,
+  APIGOTO, MiniMax CN/Intl, Chutes, OpenDesign, Kimi/Moonshot, GLM Coding CN).
+  Every adapter URL was fetched unauthenticated and repointed at the vendor real
+  console path; the remaining fourteen were verified and left alone.
+
+### Docs
+
+- The install section leads with the market/CLI path
+  (`dsh plugin --profile web add dsh-model-panel`), and both READMEs carry the
+  balance-coverage note and the Cookie-Editor paste guidance.
+- `CHUNK_REV` now equals the release version.
+
 ## 0.7.4 — 2026-11-18
 
 ### Changed

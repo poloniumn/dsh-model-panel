@@ -13,13 +13,13 @@
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)](./LICENSE)
 [![npm](https://img.shields.io/npm/v/dsh-model-panel?style=flat-square&color=cb3837&logo=npm)](https://www.npmjs.com/package/dsh-model-panel)
 [![npm downloads](https://img.shields.io/npm/dm/dsh-model-panel?style=flat-square&color=cb3837&logo=npm)](https://www.npmjs.com/package/dsh-model-panel)
-[![Version](https://img.shields.io/badge/version-0.7.4-38bdf8?style=flat-square)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.7.7-38bdf8?style=flat-square)](./package.json)
 [![listed on dsh-market](https://img.shields.io/badge/market-listed-22c55e?style=flat-square&logo=github)](https://awesome-dsh-plugin.com/p/poloniumn/dsh-model-panel/)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek%20Harness-Web%20Plugin-6366f1?style=flat-square)](https://github.com/topics/dsh-plugin)
 
 **An elegant model panel** — it replaces the composer's model seat with a searchable provider / model table.
 
-npm `0.7.4` is out · listed in the DeepSeek Harness plugin market · `dsh plugin --profile web add dsh-model-panel`
+npm `0.7.7` is out · listed in the DeepSeek Harness plugin market · `dsh plugin --profile web add dsh-model-panel`
 
 </div>
 
@@ -60,7 +60,7 @@ Released on npm and listed in the plugin market — pick one:
 
 | Channel | Address |
 | --- | --- |
-| npm | `dsh-model-panel` (latest `0.7.4`) — <https://www.npmjs.com/package/dsh-model-panel> |
+| npm | `dsh-model-panel` (latest `0.7.7`) — <https://www.npmjs.com/package/dsh-model-panel> |
 | Market page | <https://awesome-dsh-plugin.com/p/poloniumn/dsh-model-panel/> |
 | Market index | `https://awesome-dsh-plugin.com/index.json` (mirror `https://cdn.jsdelivr.net/npm/dsh-plugin-catalog/index.json`) |
 

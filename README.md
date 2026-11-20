@@ -13,13 +13,13 @@
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)](./LICENSE)
 [![npm](https://img.shields.io/npm/v/dsh-model-panel?style=flat-square&color=cb3837&logo=npm)](https://www.npmjs.com/package/dsh-model-panel)
 [![npm downloads](https://img.shields.io/npm/dm/dsh-model-panel?style=flat-square&color=cb3837&logo=npm)](https://www.npmjs.com/package/dsh-model-panel)
-[![Version](https://img.shields.io/badge/version-0.7.4-38bdf8?style=flat-square)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.7.7-38bdf8?style=flat-square)](./package.json)
 [![listed on dsh-market](https://img.shields.io/badge/market-listed-22c55e?style=flat-square&logo=github)](https://awesome-dsh-plugin.com/p/poloniumn/dsh-model-panel/)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek%20Harness-Web%20Plugin-6366f1?style=flat-square)](https://github.com/topics/dsh-plugin)
 
 **优雅的模型选择面板** —— 把输入框的模型选择位，换成一张可搜索的服务商 / 模型表格。
 
-npm `0.7.4` 已发布 · 已收录 DeepSeek Harness 插件市场 · `dsh plugin --profile web add dsh-model-panel`
+npm `0.7.7` 已发布 · 已收录 DeepSeek Harness 插件市场 · `dsh plugin --profile web add dsh-model-panel`
 
 </div>
 
@@ -60,7 +60,7 @@ npm `0.7.4` 已发布 · 已收录 DeepSeek Harness 插件市场 · `dsh plugin 
 
 | 渠道 | 地址 |
 | --- | --- |
-| npm | `dsh-model-panel`（最新 `0.7.4`）— <https://www.npmjs.com/package/dsh-model-panel> |
+| npm | `dsh-model-panel`（最新 `0.7.7`）— <https://www.npmjs.com/package/dsh-model-panel> |
 | 插件市场页 | <https://awesome-dsh-plugin.com/p/poloniumn/dsh-model-panel/> |
 | 市场索引 | `https://awesome-dsh-plugin.com/index.json`（镜像 `https://cdn.jsdelivr.net/npm/dsh-plugin-catalog/index.json`） |
 
