@@ -120,6 +120,33 @@ All notable changes to this project are documented here. The format follows
 ### Fixed
 
 - Both READMEs still carried a 0.7.2 version badge after the 0.7.3 release.
+- **Seven console links pointed at pages that no longer exist.** Every adapter's
+  `consoleUrl` was fetched unauthenticated with a browser user agent; the seven
+  below answered `404`, redirected to an unrelated page, or landed on a landing
+  page instead of the console. NanoGPT `/account` → 404, now `/billing`
+  (`Billing information | NanoGPT`); ZenMux `/console/subscription` → 404, now
+  `/platform/subscription` (its router carries no `console` tree at all); APIGOTO
+  `/console` → 200 but a promo page that rewrites to the marketing site, now
+  `https://www.apigoto.com/user/dashboard` (the real Vite console); MiniMax CN
+  `/user-center/balance` → 307 to `personal-info`, now
+  `/user-center/payment/balance` (which resolves to the recharge-records page);
+  MiniMax Intl `www.minimax.io/platform` dropped the connection, now
+  `https://platform.minimax.io/user-center/payment/balance`; Chutes `/app` was
+  the model catalog, now `/app/settings/billing`. OpenDesign was the marketing
+  home page, now `https://open-design.ai/cloud/dashboard` — both the adapter and
+  its `setup` entry, since the setup card links there too.
+- **Kimi and Moonshot consoles are reached directly.** `platform.moonshot.cn`
+  and `platform.moonshot.ai` now 307 to `platform.kimi.com` / `platform.kimi.ai`,
+  so both the default `consoleUrl` and `consoleUrlFor` link straight to the host
+  the browser ends up on, saving a round trip.
+- **GLM Coding's console is its finance overview.** `https://open.bigmodel.cn/`
+  is the marketing home page; the platform's own router redirects
+  `/usercenter/financialoverview` to `/finance-center/finance/overview`, which is
+  the balance and spend page, so the CN adapter now points at the resolved path.
+- The other fourteen were verified reachable and left alone: DeepSeek, Z.ai,
+  both Xiaomi MIMO pages, Qwen Token Plan, OpenCode Go, OpenRouter,
+  SiliconFlow, Novita, Hyperbolic, DeepInfra, Vercel AI Gateway, Ollama Cloud
+  and Synthetic; their login redirects are the normal signed-out behaviour.
 
 ### Verified, left alone on purpose
 

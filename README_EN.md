@@ -41,7 +41,7 @@ npm `0.7.4` is out · listed in the DeepSeek Harness plugin market · `dsh plugi
 | Discount chip | Drawn on model rows only (`0.5x` / `0.4x`); outside the window the row stays unmarked, and the header only turns green without a number |
 | Last row | The per-session 启用子任务 switch; off means `subagent` / `subagent_oar` refuse in this session |
 
-> **A note on per-provider balances**: the author subscribes to only a handful of providers, so not every vendor's balance and usage API could be verified first-hand. Some providers — especially newly added or recently redesigned ones — may show inaccurate, partial or missing balances, plan progress or channel credits, which is normal. If a number looks wrong, an [issue](https://github.com/poloniumn/dsh-model-panel/issues) or a pull request is welcome: the request URL and the response fields with the secrets masked are usually all it takes to fix it.
+> **A note on per-provider balances**: the author subscribes to only a handful of providers, so not every vendor's balance and usage API could be verified first-hand. Some providers — especially newly added or recently redesigned ones — may show inaccurate, partial or missing balances, plan progress or channel credits, which is normal. If a number looks wrong, an [issue](https://github.com/poloniumn/dsh-model-panel/issues) or a pull request is welcome: the request URL and the response fields with the secrets masked are usually all it takes to fix it. The console links themselves were checked one by one: every address a Ctrl-click opens answered 200 on 2026-11-20 (sign-in redirects are normal), and the seven that had rotted now point at each vendor's real console path.
 
 ## Features
 
