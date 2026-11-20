@@ -36,7 +36,7 @@ npm `0.7.4` is out · listed in the DeepSeek Harness plugin market · `dsh plugi
 | UI element | What it does |
 | --- | --- |
 | Search box | Filters providers and models live; Enter picks the first match |
-| Provider header | Balance (`¥0.11`), plan progress (`96%`), and the OpenDesign wallet at `$1.00` with its 5-hour / Weekly windows on one line |
+| Provider header | Balance (`¥0.11`), plan progress (`96%`), and the OpenDesign wallet at `$1.00` with its 5-hour / Weekly windows on one line; holding Ctrl (⌘ on a Mac) turns the name into an underlined link that opens the provider's console in the default browser |
 | Model row | Thinking toggle + effort slider (High etc.) + one-click reset |
 | Discount chip | Drawn on model rows only (`0.5x` / `0.4x`); outside the window the row stays unmarked, and the header only turns green without a number |
 | Last row | The per-session 启用子任务 switch; off means `subagent` / `subagent_oar` refuse in this session |

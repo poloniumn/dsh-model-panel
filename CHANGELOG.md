@@ -34,7 +34,8 @@ All notable changes to this project are documented here. The format follows
   `client.settings.js` no longer pulls `useRef` / `Fragment`.
 - **The published tarball ships no tests.** `test/` left the `files` whitelist:
   it still runs in CI from the repository and is not needed at install time.
-- `README.md` / `README_EN.md`: the version badge says 0.7.4.
+- `README.md` / `README_EN.md`: the version badge says 0.7.4, and the
+  provider-header row of the UI table says Ctrl-click opens the console.
 
 - **The showcase screenshot is the real panel again.** `images/panel-overview.png`
   was a 0.6-era shot with no discount chips, no plan progress and no subagent
@@ -100,6 +101,21 @@ All notable changes to this project are documented here. The format follows
 - `README.md` / `README_EN.md`: the same two notes in the balance-display section,
   and the credential table says which of the three OpenDesign values are
   alternatives rather than a checklist.
+
+### Added
+
+- **Ctrl-click a provider name to open its console.** The name is a plain label
+  until Ctrl (⌘ on a Mac) is held, then it turns into a link — colour and
+  underline — and a click opens the dashboard in the system browser
+  (`window.open`, the same call the settings tab already uses). Every other
+  gesture keeps its old meaning: a plain click still folds the group, a click
+  on a row still picks that model, and a double click is still two folds.
+  `Enter`/`Space` on the focused header opens the console with the same
+  modifier. Providers without a `consoleUrl` in their balance row keep an
+  unlinked header; the URL comes from the row the vendor already publishes
+  (`lib/rows.js` `adapterMeta`), never from a second table in the client.
+- **`CHUNK_REV` moved to `0.7.4.2`.** The panel chunk changed again, and the
+  host caches it for a year under an immutable name.
 
 ### Fixed
 

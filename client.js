@@ -30,7 +30,7 @@ window.__ModuleLoader__.load({
      * outlive the release. Changing this string changes the size of client.js,
      * which changes the revision, which invalidates every chunk URL with it.
      */
-    const CHUNK_REV = '0.7.4.1';
+    const CHUNK_REV = '0.7.4.2';
 
     const NS = 'model-panel';
     const SLOT = 'conversation.input.model';

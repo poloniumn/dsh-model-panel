@@ -30,6 +30,20 @@ window.__ModuleLoader__.load({
     /** Minute identifier: one integer per minute, so repeats compare equal. */
     const minuteKey = () => Math.floor(Date.now() / 60_000);
 
+    /**
+     * Open a provider console in the system browser. Called only behind a
+     * Ctrl/⌘ gesture, so a stray click can never leave the panel.
+     */
+    const openConsole = (url) => {
+      if (!url) return;
+      try {
+        const win = window.open(url, '_blank', 'noopener,noreferrer');
+        if (win && typeof win.focus === 'function') win.focus();
+      } catch {
+        /* the browser refused the popup; the console URL stays in the tooltip */
+      }
+    };
+
     function ModelPanel(props) {
       const { available, directory, load, select, locked, t: tRaw, sessionId } = props;
       // The slot kit normally injects `t`; never let a missing translator crash
@@ -67,6 +81,9 @@ window.__ModuleLoader__.load({
       // and the state holds the minute itself, so a second tick inside the same
       // minute is a no-op instead of a fresh render.
       const [nowKey, setNowKey] = useState(minuteKey);
+      // Whether a Ctrl / ⌘ hold is in progress. Only used to turn the provider
+      // name into a visible link: the gesture itself is read off the event.
+      const [modHeld, setModHeld] = useState(false);
       // Group ids already known to be channel-fed. A credit lookup that fails on
       // a later poll must not move a provider back up the list.
       const thirdSeen = useRef(new Set());
@@ -167,8 +184,19 @@ window.__ModuleLoader__.load({
             e.stopPropagation();
             e.preventDefault();
             close(true);
+            return;
           }
         };
+        const onMod = (e) => {
+          if (e.key === 'Control' || e.key === 'Meta') setModHeld(true);
+        };
+        const onModUp = (e) => {
+          if (e.key === 'Control' || e.key === 'Meta') setModHeld(false);
+        };
+        // A hold that started outside and ended outside must not leave the
+        // header underlined forever, and the focus change is also the moment
+        // the browser took the console tab.
+        const onBlur = () => setModHeld(false);
         const onDown = (e) => {
           const target = e.target;
           if (panelRef.current && panelRef.current.contains(target)) return;
@@ -178,7 +206,10 @@ window.__ModuleLoader__.load({
         window.addEventListener('resize', onResize);
         document.addEventListener('scroll', onScroll, true);
         document.addEventListener('keydown', onKey, true);
+        document.addEventListener('keydown', onMod, true);
+        document.addEventListener('keyup', onModUp, true);
         document.addEventListener('mousedown', onDown, true);
+        window.addEventListener('blur', onBlur);
         return () => {
           alive = false;
           if (again) clearTimeout(again);
@@ -187,7 +218,11 @@ window.__ModuleLoader__.load({
           window.removeEventListener('resize', onResize);
           window.removeEventListener('scroll', onScroll, true);
           document.removeEventListener('keydown', onKey, true);
+          document.removeEventListener('keydown', onMod, true);
+          document.removeEventListener('keyup', onModUp, true);
           document.removeEventListener('mousedown', onDown, true);
+          window.removeEventListener('blur', onBlur);
+          setModHeld(false);
         };
       }, [open, updatePos, close, load, available, sessionId]);
 
@@ -483,6 +518,10 @@ window.__ModuleLoader__.load({
         const discounted = groupHasDiscount(now, row, Array.isArray(g.models) ? g.models : entry.list);
         const credit = thirdByEntry.get(entry) || null;
 
+        // The vendor dashboard (or its top-up page) lives on the balance row;
+        // absent one, the header simply has no link.
+        const url = (row && row.consoleUrl) || null;
+
         let info = null;
         if (row && row.status === 'ok') {
           if ((row.kind === 'money' || row.kind === 'account') && Number.isFinite(row.amount)) {
@@ -611,21 +650,47 @@ window.__ModuleLoader__.load({
           h(
             'div',
             {
-              className: 'dshmp-phead',
+              className: 'dshmp-phead' + (url ? ' linked' : '') + (url && modHeld ? ' ctrl' : ''),
               role: 'button',
               tabIndex: 0,
               'aria-expanded': entry.expanded ? 'true' : 'false',
-              onClick: () => toggleCollapsed(g.id),
-              onKeyDown: (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+              // Ctrl / ⌘ is the deliberate gesture: a plain click still folds the
+              // group, and only the modified one opens the console.
+              onClick: (e) => {
+                if (url && (e.ctrlKey || e.metaKey)) {
                   e.preventDefault();
-                  e.stopPropagation();
-                  toggleCollapsed(g.id);
+                  openConsole(url);
+                  return;
                 }
+                toggleCollapsed(g.id);
+              },
+              onKeyDown: (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                e.stopPropagation();
+                if (url && (e.ctrlKey || e.metaKey)) openConsole(url);
+                else toggleCollapsed(g.id);
               },
             },
             h('span', { className: 'dshmp-arrow' + (entry.expanded ? ' open' : ''), 'aria-hidden': 'true' }, '▸'),
-            h('span', { className: 'dshmp-pname' }, g.name || g.id),
+            url
+              ? h(
+                  'span',
+                  {
+                    className: 'dshmp-plink',
+                    title: t('ctrlOpenHint'),
+                    onClick: (e) => {
+                      // A plain click is not the gesture: let it bubble to the
+                      // header, which folds the group as it always did.
+                      if (!(e.ctrlKey || e.metaKey)) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      openConsole(url);
+                    },
+                  },
+                  h('span', { className: 'dshmp-pname' }, g.name || g.id)
+                )
+              : h('span', { className: 'dshmp-pname' }, g.name || g.id),
             h(
               'span',
               { className: 'dshmp-pinfo' },
@@ -655,6 +720,7 @@ window.__ModuleLoader__.load({
         commitLevel,
         resetLevel,
         toggleCollapsed,
+        modHeld,
         guard,
         busy,
         available,
